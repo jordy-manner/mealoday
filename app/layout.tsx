@@ -35,7 +35,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
-        {children}
+        <div className="flex-1">{children}</div>
+        {/* Footer global : année courante + version de l'app (APP_RELEASE = tag git). */}
+        <footer className="border-t border-zinc-200 px-6 py-4 text-center text-xs text-zinc-500 dark:border-zinc-800">
+          © {new Date().getFullYear()} — Release: {process.env.APP_RELEASE ?? "dev"}
+        </footer>
       </body>
     </html>
   );
