@@ -47,7 +47,7 @@ Dans **Project → Settings → Environment Variables**, définir `DATABASE_URL`
 | `APP_MAINTENANCE` | `true` |
 | `APP_MAINTENANCE_BYPASS` | un secret de ton choix (ex. chaîne aléatoire) |
 
-Puis **redeploy** (l'env du proxy est résolu au build → toggler demande un redeploy).
+Puis **redeploy**. *(Le Proxy tourne en runtime Node.js — l'env est lu au runtime —, mais Vercel lie les variables d'env à un déploiement donné, donc un changement ne s'applique qu'après un nouveau déploiement.)* La valeur de `APP_MAINTENANCE` accepte `true`, `1`, `on`, `yes` (insensible à la casse/espaces).
 
 - **Ne pas** définir `APP_MAINTENANCE` en **Preview** → le staging (`meal-preview`) reste ouvert pour bosser.
 - **Bypass propriétaire** : visiter `https://meal.presstify.com/?unlock=<APP_MAINTENANCE_BYPASS>` → pose un cookie → tu vois le vrai site malgré la maintenance.

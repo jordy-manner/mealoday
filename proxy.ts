@@ -1,12 +1,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Mode maintenance (Next 16 : "Proxy", ex-Middleware). Quand APP_MAINTENANCE="true",
-// toute requête renvoie une page 503 « En construction » — sauf bypass propriétaire.
-// Piloté par env : true uniquement sur la Production Vercel ; off en Preview/local.
-// (L'env du proxy est résolu au build Edge → toggler APP_MAINTENANCE demande un redeploy.)
+// Mode maintenance (Next 16 : "Proxy", ex-Middleware). Quand APP_MAINTENANCE est
+// vrai, toute requête renvoie une page 503 « En construction » — sauf bypass propriétaire.
+// Piloté par env : activé uniquement sur la Production Vercel ; off en Preview/local.
+//
+// Le Proxy tourne sur le runtime Node.js (défaut en Next 16) → l'env est lu au
+// RUNTIME (pas figé au build). Toggler APP_MAINTENANCE nécessite tout de même un
+// redeploy, car Vercel lie les variables d'env à un déploiement donné.
 
 const BYPASS_COOKIE = "mnt_bypass";
+
+// Accepte les valeurs booléennes usuelles : true, 1, on, yes, y (insensible à la
+// casse et aux espaces). Tout le reste (vide, false, 0…) = désactivé.
+function isTruthy(value: string | undefined): boolean {
+  return value != null && ["true", "1", "on", "yes", "y"].includes(value.trim().toLowerCase());
+}
 
 const MAINTENANCE_HTML = `<!doctype html>
 <html lang="fr">
@@ -42,7 +51,7 @@ const MAINTENANCE_HTML = `<!doctype html>
 
 export function proxy(request: NextRequest) {
   // Hors maintenance → laisser passer.
-  if (process.env.APP_MAINTENANCE !== "true") {
+  if (!isTruthy(process.env.APP_MAINTENANCE)) {
     return NextResponse.next();
   }
 

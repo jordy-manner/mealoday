@@ -45,5 +45,5 @@ next-env.d.ts
 
 /app/generated/prisma
 
-# claude code : réglages locaux ignorés, skills versionnés
-.claude/settings.local.json
+# claude code : outillage local, jamais versionné (skills, réglages, etc.)
+.claude/
