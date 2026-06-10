@@ -36,6 +36,23 @@ Dans **Project → Settings → Environment Variables**, définir `DATABASE_URL`
 4. Ajouter les variables d'environnement ci-dessus (au moins `DATABASE_URL` pour Production et Preview).
 5. **Deploy**.
 
+## Mode maintenance (« En construction »)
+
+`proxy.ts` (ex-middleware Next 16) protège le site : quand **`APP_MAINTENANCE="true"`**, toute requête renvoie une **503** avec une page « En construction » (`noindex`, donc pas indexée par Google).
+
+**Mettre la PROD en maintenance** (tant que l'app n'est pas prête) — dans Vercel, env **Production** uniquement :
+
+| Variable | Valeur |
+| --- | --- |
+| `APP_MAINTENANCE` | `true` |
+| `APP_MAINTENANCE_BYPASS` | un secret de ton choix (ex. chaîne aléatoire) |
+
+Puis **redeploy** (l'env du proxy est résolu au build → toggler demande un redeploy).
+
+- **Ne pas** définir `APP_MAINTENANCE` en **Preview** → le staging (`meal-preview`) reste ouvert pour bosser.
+- **Bypass propriétaire** : visiter `https://meal.presstify.com/?unlock=<APP_MAINTENANCE_BYPASS>` → pose un cookie → tu vois le vrai site malgré la maintenance.
+- **Lever la maintenance** au lancement : `APP_MAINTENANCE=false` (ou supprimer la variable) en Production → redeploy.
+
 ## Base de données
 
 - La branche **production** contient déjà le schéma (4 migrations) + les 12 unités du seed
