@@ -285,6 +285,7 @@ export function RecipeForm({
           </div>
 
           <DndContext
+            id="dnd-ingredients"
             sensors={sensors}
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -372,6 +373,7 @@ export function RecipeForm({
           )}
 
           <DndContext
+            id="dnd-utensils"
             sensors={sensors}
             collisionDetection={closestCenter}
             modifiers={[restrictToVerticalAxis]}
@@ -434,6 +436,7 @@ export function RecipeForm({
           Étapes <span className="text-zinc-500">(Markdown · une étape par bloc)</span>
         </span>
         <DndContext
+          id="dnd-steps"
           sensors={sensors}
           collisionDetection={closestCenter}
           modifiers={[restrictToVerticalAxis]}
