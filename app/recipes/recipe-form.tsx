@@ -1,8 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useRef, useState, type ReactNode } from "react";
 import { useFormStatus } from "react-dom";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import type { FormState } from "./actions";
 import { TagsCombobox } from "./tags-combobox";
 import { StepEditor } from "./step-editor";
@@ -49,6 +67,59 @@ const field =
   "rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900";
 const labelCls = "block text-sm font-medium mb-1";
 
+/** Poignée « burger » (☰) servant à glisser-déposer une ligne. */
+function DragHandleIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path
+        d="M2 4h12M2 8h12M2 12h12"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Ligne triable : poignée de glissement (☰) + contenu. `id` doit être stable et
+ * unique au sein du SortableContext. `className` porte la mise en page de la ligne.
+ */
+function SortableRow({
+  id,
+  className,
+  handleClassName,
+  children,
+}: {
+  id: number;
+  className: string;
+  handleClassName?: string;
+  children: ReactNode;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div ref={setNodeRef} style={style} className={className}>
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        aria-label="Glisser pour réordonner"
+        className={`flex shrink-0 cursor-grab touch-none items-center justify-center text-zinc-400 hover:text-zinc-600 active:cursor-grabbing dark:hover:text-zinc-200 ${handleClassName ?? "h-9 w-6"}`}
+      >
+        <DragHandleIcon />
+      </button>
+      {children}
+    </div>
+  );
+}
+
 export function RecipeForm({
   action,
   defaultValues = EMPTY,
@@ -66,13 +137,21 @@ export function RecipeForm({
 }) {
   const [state, formAction] = useActionState(action, { error: null });
 
-  // Lignes d'ingrédients gérées en état (au moins une ligne visible).
-  const keyCounter = useRef(0);
+  // Capteurs partagés (souris/tactile + clavier pour l'accessibilité). Une petite
+  // distance d'activation évite de déclencher un tri sur un simple clic.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  // Lignes d'ingrédients gérées en état (au moins une ligne visible). Les clés
+  // initiales sont l'index ; le compteur démarre après pour les ajouts ultérieurs.
+  const initialRows = defaultValues.ingredients.length
+    ? defaultValues.ingredients
+    : [{ name: "", quantity: "", unit: "" }];
+  const keyCounter = useRef(initialRows.length);
   const [rows, setRows] = useState<IngredientRow[]>(
-    (defaultValues.ingredients.length
-      ? defaultValues.ingredients
-      : [{ name: "", quantity: "", unit: "" }]
-    ).map((r) => ({ key: keyCounter.current++, ...r })),
+    initialRows.map((r, i) => ({ key: i, ...r })),
   );
 
   const updateRow = (key: number, patch: Partial<IngredientRow>) =>
@@ -84,14 +163,20 @@ export function RecipeForm({
     ]);
   const removeRow = (key: number) =>
     setRows((rs) => (rs.length > 1 ? rs.filter((r) => r.key !== key) : rs));
+  const reorderRows = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    setRows((rs) => {
+      const from = rs.findIndex((r) => r.key === active.id);
+      const to = rs.findIndex((r) => r.key === over.id);
+      return from === -1 || to === -1 ? rs : arrayMove(rs, from, to);
+    });
+  };
 
   // Lignes d'étapes (Markdown), au moins une visible.
-  const stepKey = useRef(0);
+  const initialSteps = defaultValues.steps.length ? defaultValues.steps : [""];
+  const stepKey = useRef(initialSteps.length);
   const [steps, setSteps] = useState<StepRow[]>(
-    (defaultValues.steps.length ? defaultValues.steps : [""]).map((value) => ({
-      key: stepKey.current++,
-      value,
-    })),
+    initialSteps.map((value, i) => ({ key: i, value })),
   );
   const updateStep = (key: number, value: string) =>
     setSteps((ss) => ss.map((s) => (s.key === key ? { ...s, value } : s)));
@@ -99,6 +184,14 @@ export function RecipeForm({
     setSteps((ss) => [...ss, { key: stepKey.current++, value: "" }]);
   const removeStep = (key: number) =>
     setSteps((ss) => (ss.length > 1 ? ss.filter((s) => s.key !== key) : ss));
+  const reorderSteps = ({ active, over }: DragEndEvent) => {
+    if (!over || active.id === over.id) return;
+    setSteps((ss) => {
+      const from = ss.findIndex((s) => s.key === active.id);
+      const to = ss.findIndex((s) => s.key === over.id);
+      return from === -1 || to === -1 ? ss : arrayMove(ss, from, to);
+    });
+  };
 
   return (
     <form action={formAction} className="flex flex-col gap-5">
@@ -149,58 +242,68 @@ export function RecipeForm({
         </div>
       </div>
 
-      {/* Ingrédients : lignes dynamiques (nom autocomplete · quantité · unité autocomplete) */}
+      {/* Ingrédients : lignes dynamiques réordonnables (poignée · nom · quantité · unité) */}
       <div>
         <span className={labelCls}>Ingrédients</span>
         <div className="flex flex-col gap-2">
-          {/* En-têtes de colonnes */}
+          {/* En-têtes de colonnes (l'espace initial w-6 correspond à la poignée) */}
           <div className="hidden gap-2 text-xs text-zinc-500 sm:flex">
+            <span className="w-6" />
             <span className="flex-1">Ingrédient</span>
             <span className="w-24">Quantité</span>
             <span className="w-36">Unité</span>
             <span className="w-8" />
           </div>
 
-          {rows.map((row) => (
-            <div key={row.key} className="flex flex-wrap items-center gap-2">
-              <input
-                name="ingredientName"
-                list="ingredient-options"
-                placeholder="ex. farine"
-                value={row.name}
-                onChange={(e) => updateRow(row.key, { name: e.target.value })}
-                className={`${field} min-w-40 flex-1`}
-                autoComplete="off"
-              />
-              <input
-                name="ingredientQuantity"
-                type="number"
-                step="any"
-                min="0"
-                placeholder="250"
-                value={row.quantity}
-                onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
-                className={`${field} w-24`}
-              />
-              <input
-                name="ingredientUnit"
-                list="unit-options"
-                placeholder="g"
-                value={row.unit}
-                onChange={(e) => updateRow(row.key, { unit: e.target.value })}
-                className={`${field} w-36`}
-                autoComplete="off"
-              />
-              <button
-                type="button"
-                onClick={() => removeRow(row.key)}
-                aria-label="Supprimer cette ligne"
-                className="flex h-9 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800"
-              >
-                ✕
-              </button>
-            </div>
-          ))}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToVerticalAxis]}
+            onDragEnd={reorderRows}
+          >
+            <SortableContext items={rows.map((r) => r.key)} strategy={verticalListSortingStrategy}>
+              {rows.map((row) => (
+                <SortableRow key={row.key} id={row.key} className="flex flex-wrap items-center gap-2">
+                  <input
+                    name="ingredientName"
+                    list="ingredient-options"
+                    placeholder="ex. farine"
+                    value={row.name}
+                    onChange={(e) => updateRow(row.key, { name: e.target.value })}
+                    className={`${field} min-w-40 flex-1`}
+                    autoComplete="off"
+                  />
+                  <input
+                    name="ingredientQuantity"
+                    type="number"
+                    step="any"
+                    min="0"
+                    placeholder="250"
+                    value={row.quantity}
+                    onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
+                    className={`${field} w-24`}
+                  />
+                  <input
+                    name="ingredientUnit"
+                    list="unit-options"
+                    placeholder="g"
+                    value={row.unit}
+                    onChange={(e) => updateRow(row.key, { unit: e.target.value })}
+                    className={`${field} w-36`}
+                    autoComplete="off"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeRow(row.key)}
+                    aria-label="Supprimer cette ligne"
+                    className="flex h-9 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800"
+                  >
+                    ✕
+                  </button>
+                </SortableRow>
+              ))}
+            </SortableContext>
+          </DndContext>
         </div>
 
         <button
@@ -224,33 +327,48 @@ export function RecipeForm({
         </datalist>
       </div>
 
-      {/* Étapes : lignes dynamiques, chaque étape en Markdown (barre d'outils au focus) */}
+      {/* Étapes : lignes dynamiques réordonnables, chaque étape en Markdown */}
       <div>
         <span className={labelCls}>
-          Étapes <span className="text-zinc-500">(Markdown · une étape par ligne)</span>
+          Étapes <span className="text-zinc-500">(Markdown · une étape par bloc)</span>
         </span>
-        <ol className="flex list-decimal flex-col gap-2 pl-5 marker:text-zinc-400">
-          {steps.map((step, i) => (
-            <li key={step.key}>
-              <div className="flex items-start gap-2">
-                <StepEditor
-                  name="step"
-                  value={step.value}
-                  onChange={(value) => updateStep(step.key, value)}
-                  placeholder={`Étape ${i + 1}…`}
-                />
-                <button
-                  type="button"
-                  onClick={() => removeStep(step.key)}
-                  aria-label="Supprimer cette étape"
-                  className="flex h-9 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800"
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          modifiers={[restrictToVerticalAxis]}
+          onDragEnd={reorderSteps}
+        >
+          <SortableContext items={steps.map((s) => s.key)} strategy={verticalListSortingStrategy}>
+            <div className="flex flex-col gap-2">
+              {steps.map((step, i) => (
+                <SortableRow
+                  key={step.key}
+                  id={step.key}
+                  className="flex items-start gap-2"
+                  handleClassName="mt-2 h-6 w-6"
                 >
-                  ✕
-                </button>
-              </div>
-            </li>
-          ))}
-        </ol>
+                  <span className="mt-2 w-4 shrink-0 text-sm tabular-nums text-zinc-400">
+                    {i + 1}.
+                  </span>
+                  <StepEditor
+                    name="step"
+                    value={step.value}
+                    onChange={(value) => updateStep(step.key, value)}
+                    placeholder={`Étape ${i + 1}…`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeStep(step.key)}
+                    aria-label="Supprimer cette étape"
+                    className="mt-1 flex h-9 w-8 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-red-600 dark:hover:bg-zinc-800"
+                  >
+                    ✕
+                  </button>
+                </SortableRow>
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
         <button
           type="button"
           onClick={addStep}
