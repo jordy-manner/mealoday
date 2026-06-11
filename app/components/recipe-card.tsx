@@ -19,6 +19,8 @@ export type RecipeCardData = {
   categories: string[];
 };
 
+const DIFF_LABELS: Record<number, string> = { 1: "Facile", 2: "Moyen", 3: "Difficile" };
+
 function MetaRow({ r }: { r: RecipeCardData }) {
   const total = (r.prepTime ?? 0) + (r.cookTime ?? 0);
   return (
@@ -30,10 +32,14 @@ function MetaRow({ r }: { r: RecipeCardData }) {
       )}
       {r.servings != null && (
         <span className="inline-flex items-center gap-1.5">
-          <Icon name="users" size={14} /> {r.servings}
+          <Icon name="users" size={14} /> {r.servings} pers.
         </span>
       )}
-      {r.difficulty != null && <Difficulty level={r.difficulty} />}
+      {r.difficulty != null && (
+        <span className="inline-flex items-center gap-1.5">
+          <Difficulty level={r.difficulty} /> {DIFF_LABELS[r.difficulty]}
+        </span>
+      )}
       {r.rating != null && (
         <span className="inline-flex items-center gap-1.5 text-ink-soft">
           <Icon name="star" size={14} className="text-accent" fill="currentColor" />

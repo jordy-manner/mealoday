@@ -60,7 +60,10 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   made unique (`slugify` + collision suffix).
 - **Client Components** (`"use client"`) only where interactivity is needed: search
   controls, servings stepper, checkable steps, the dynamic form, the live preview.
-  Drag-and-drop reordering of ingredients/utensils/steps uses **dnd-kit**.
+  Drag-and-drop reordering of ingredients/utensils/steps uses **dnd-kit**. The
+  ingredient unit is an editable combobox (`unit-combobox.tsx`, catalog + free value);
+  forms submit via **positional inputs** (multiple same-named fields read by index in
+  `actions.ts`), so combobox values are mirrored into hidden inputs.
 - **Media**: `lib/media.ts` exposes a `MediaStore` (`upload`/`remove`). Cloudinary is the
   current backend (signed REST, no SDK); designed to add a local backend later. Degrades
   to gradient placeholders when `CLOUDINARY_*` is unset.

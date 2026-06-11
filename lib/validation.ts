@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 /** Optional non-negative integer (max bound for e.g. difficulty 1–3). */
-const intField = (field: string, max?: number) =>
+const intField = (field: string, max?: number, min = 0) =>
   z.preprocess(
     (v) =>
       v === "" || v === null || v === undefined
@@ -16,7 +16,7 @@ const intField = (field: string, max?: number) =>
     z
       .number({ message: `${field} est invalide` })
       .int(`${field} doit être un entier`)
-      .min(0, `${field} est invalide`)
+      .min(min, `${field} est invalide`)
       .max(max ?? Number.MAX_SAFE_INTEGER, `${field} est invalide`)
       .nullable(),
   );
@@ -72,7 +72,7 @@ const ingredientSchema = z.object({
 
 const utensilSchema = z.object({
   name: z.string().trim().min(1),
-  quantity: intField("La quantité", 100_000),
+  quantity: intField("La quantité", 100_000, 1), // optional; ≥ 1 when provided
 });
 
 /** Rows without a name are dropped before validation. */

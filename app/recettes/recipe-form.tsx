@@ -24,6 +24,7 @@ import { CSS } from "@dnd-kit/utilities";
 import type { FormState } from "./actions";
 import { TagsCombobox } from "./tags-combobox";
 import { StepEditor } from "./step-editor";
+import { UnitCombobox } from "./unit-combobox";
 import { Icon } from "../components/icons";
 import { RecipePhoto, Tag, formatTime } from "../components/recipe-ui";
 
@@ -530,7 +531,16 @@ export function RecipeForm({
                       className={`${fieldBase} min-w-0 flex-1`}
                       autoComplete="off"
                     />
-                    <input type="hidden" name="utensilQuantity" value={row.quantity} />
+                    <input
+                      name="utensilQuantity"
+                      type="number"
+                      min="1"
+                      step="1"
+                      placeholder="1"
+                      value={row.quantity}
+                      onChange={(e) => updateUtensil(row.key, { quantity: e.target.value })}
+                      className={`${fieldBase} w-20`}
+                    />
                     <RemoveButton onClick={() => removeUtensil(row.key)} label="Supprimer cet ustensile" />
                   </SortableRow>
                 ))}
@@ -588,15 +598,14 @@ export function RecipeForm({
                       onChange={(e) => updateRow(row.key, { quantity: e.target.value })}
                       className={`${fieldBase} w-24`}
                     />
-                    <input
-                      name="ingredientUnit"
-                      list="unit-options"
-                      placeholder="g"
+                    <UnitCombobox
                       value={row.unit}
-                      onChange={(e) => updateRow(row.key, { unit: e.target.value })}
-                      className={`${fieldBase} w-32`}
-                      autoComplete="off"
+                      onChange={(unit) => updateRow(row.key, { unit })}
+                      options={unitOptions}
+                      className="w-32"
                     />
+                    {/* Positional submission: one ingredientUnit value per row. */}
+                    <input type="hidden" name="ingredientUnit" value={row.unit} />
                     <RemoveButton
                       onClick={() => removeRow(row.key)}
                       label="Supprimer cet ingrédient"
@@ -610,11 +619,6 @@ export function RecipeForm({
           <AddRowButton onClick={addRow}>Ajouter un ingrédient</AddRowButton>
           <datalist id="ingredient-options">
             {ingredientOptions.map((o) => (
-              <option key={o} value={o} />
-            ))}
-          </datalist>
-          <datalist id="unit-options">
-            {unitOptions.map((o) => (
               <option key={o} value={o} />
             ))}
           </datalist>

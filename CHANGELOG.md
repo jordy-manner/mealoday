@@ -2,6 +2,12 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.2] — 2026-06-11
+
+- Ingredient unit is now an editable combobox (`UnitCombobox`): catalog dropdown + free value, replacing the datalist input.
+- Utensil quantity is now an editable number input (optional, ≥ 1; defaults to 1 when displayed). Zod coerces it to an `Int ≥ 1`.
+- Recipe cards show `{n} pers.` and the difficulty label (Facile/Moyen/Difficile) next to the dots.
+
 ## [v0.2.1] — 2026-06-11
 
 - Steps moved to their own `Step` table (content + order); every recipe now has a unique `slug`.
