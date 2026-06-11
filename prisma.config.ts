@@ -3,9 +3,9 @@
 import { config } from "dotenv";
 import { defineConfig } from "prisma/config";
 
-// Charge .env.local en priorité (secrets, non commité), puis .env (template).
-// override:false (défaut) => la première valeur chargée gagne, donc .env.local
-// l'emporte sur .env pour DATABASE_URL.
+// Loads .env.local first (secrets, not committed), then .env (template).
+// override:false (default) => the first loaded value wins, so .env.local takes
+// precedence over .env for DATABASE_URL.
 config({ path: ".env.local" });
 config({ path: ".env" });
 

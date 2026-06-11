@@ -23,79 +23,79 @@ model Recipe {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  // Ingrédients de la recette (many-to-many via jonction explicite RecipeIngredient,
-  // qui porte la quantité et l'unité).
+  // Ingredients of the recipe (many-to-many via the explicit RecipeIngredient
+  // join, which carries the quantity and the unit).
   recipeIngredients RecipeIngredient[]
-  // Ustensiles de la recette (many-to-many via jonction explicite RecipeUtensil,
-  // qui porte la quantité).
+  // Utensils of the recipe (many-to-many via the explicit RecipeUtensil join,
+  // which carries the quantity).
   recipeUtensils    RecipeUtensil[]
-  // Tags partagés (many-to-many via table de jonction explicite RecipeTag).
+  // Shared tags (many-to-many via the explicit RecipeTag join table).
   recipeTags        RecipeTag[]
 }
 
-// Catalogue d'ingrédients réutilisables (ex. "farine", "œuf"). name unique.
+// Catalog of reusable ingredients (e.g. "farine", "œuf"). Unique name.
 model Ingredient {
   id                String             @id @default(cuid())
   name              String             @unique
   recipeIngredients RecipeIngredient[]
 }
 
-// Catalogue d'unités de mesure réutilisables (ex. "g", "kg", "ml", "pincée", "unité").
+// Catalog of reusable units of measure (e.g. "g", "kg", "ml", "pincée", "unité").
 model Unit {
   id                String             @id @default(cuid())
   name              String             @unique
   recipeIngredients RecipeIngredient[]
 }
 
-// Jonction explicite Recipe <-> Ingredient, porteuse de la quantité et de l'unité.
-// Table "RecipeIngredient" (colonnes recipeId / ingredientId, PK composite).
+// Explicit Recipe <-> Ingredient join, carrying the quantity and the unit.
+// Table "RecipeIngredient" (columns recipeId / ingredientId, composite PK).
 model RecipeIngredient {
   recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId     String
   ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
   ingredientId String
-  quantity     Float? // ex. 250, 0.5, 3 — optionnel ("sel à volonté")
+  quantity     Float? // e.g. 250, 0.5, 3 — optional ("sel à volonté")
   unit         Unit?      @relation(fields: [unitId], references: [id], onDelete: SetNull)
   unitId       String?
-  position     Int        @default(0) // ordre d'affichage dans la recette
+  position     Int        @default(0) // display order within the recipe
 
   @@id([recipeId, ingredientId])
   @@index([ingredientId])
   @@index([unitId])
 }
 
-// Catalogue d'ustensiles réutilisables (ex. "cuillère en bois", "moule à manqué
-// 24 cm", "poêle 28 cm"). name unique. Les déclinaisons par taille (diamètre) sont
-// des entrées distinctes du catalogue.
+// Catalog of reusable utensils (e.g. "cuillère en bois", "moule à manqué
+// 24 cm", "poêle 28 cm"). Unique name. Size variants (diameter) are distinct
+// catalog entries.
 model Utensil {
   id             String          @id @default(cuid())
   name           String          @unique
   recipeUtensils RecipeUtensil[]
 }
 
-// Jonction explicite Recipe <-> Utensil, porteuse de la quantité (nombre d'ustensiles).
-// Table "RecipeUtensil" (colonnes recipeId / utensilId, PK composite).
+// Explicit Recipe <-> Utensil join, carrying the quantity (number of utensils).
+// Table "RecipeUtensil" (columns recipeId / utensilId, composite PK).
 model RecipeUtensil {
   recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId  String
   utensil   Utensil @relation(fields: [utensilId], references: [id], onDelete: Cascade)
   utensilId String
-  quantity  Int? // ex. 1, 2 — optionnel (1 par défaut à l'affichage)
-  position  Int     @default(0) // ordre d'affichage dans la recette
+  quantity  Int? // e.g. 1, 2 — optional (defaults to 1 when displayed)
+  position  Int     @default(0) // display order within the recipe
 
   @@id([recipeId, utensilId])
   @@index([utensilId])
 }
 
-// Un tag est réutilisable et partagé entre plusieurs recettes.
+// A tag is reusable and shared across multiple recipes.
 model Tag {
   id         String      @id @default(cuid())
   name       String      @unique
   recipeTags RecipeTag[]
 }
 
-// Table de jonction explicite de la relation many-to-many Recipe <-> Tag.
-// Table : "RecipeTag", colonnes : "recipeId" et "tagId" (clé primaire composite).
+// Explicit join table for the many-to-many Recipe <-> Tag relation.
+// Table: "RecipeTag", columns: "recipeId" and "tagId" (composite primary key).
 model RecipeTag {
   recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId String

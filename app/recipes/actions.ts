@@ -11,7 +11,7 @@ import {
   recipeUtensilsCreate,
 } from "@/lib/recipes";
 
-// État renvoyé au formulaire via useActionState (affichage des erreurs).
+// State returned to the form via useActionState (error display).
 export type FormState = { error: string | null };
 
 export async function createRecipeAction(

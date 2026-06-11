@@ -9,8 +9,8 @@ import {
   validateRecipeInput,
 } from "@/lib/recipes";
 
-// Inclut les relations : ingrédients (avec leur unité) ordonnés, ustensiles
-// ordonnés, tags triés.
+// Includes the relations: ordered ingredients (with their unit), ordered
+// utensils, sorted tags.
 const withRelations = {
   recipeIngredients: {
     include: { ingredient: true, unit: true },
@@ -23,7 +23,7 @@ const withRelations = {
   recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
 } as const;
 
-// GET /api/recipes — liste des recettes (plus récentes d'abord)
+// GET /api/recipes — list of recipes (most recent first)
 export async function GET() {
   const recipes = await prisma.recipe.findMany({
     orderBy: { createdAt: "desc" },
@@ -32,7 +32,7 @@ export async function GET() {
   return NextResponse.json(recipes.map(flattenRecipe));
 }
 
-// POST /api/recipes — création
+// POST /api/recipes — create
 export async function POST(request: Request) {
   let body: unknown;
   try {

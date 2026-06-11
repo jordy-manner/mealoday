@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "Recettes" };
 
-// Données dépendantes de la DB → rendu à la demande (pas de prérendu statique au build).
+// DB-dependent data → rendered on demand (no static prerender at build time).
 export const dynamic = "force-dynamic";
 
 export default async function RecipesPage() {
@@ -13,7 +13,7 @@ export default async function RecipesPage() {
       recipeTags: { include: { tag: true }, orderBy: { tag: { name: "asc" } } },
     },
   });
-  // La liste n'a besoin que des tags : on aplatit juste cette relation.
+  // The list only needs the tags: we just flatten that relation.
   const recipes = rows.map((r) => ({
     ...r,
     tags: r.recipeTags.map((rt) => rt.tag),

@@ -1,10 +1,10 @@
-// Types et validation partagés entre les API Routes et les Server Actions.
+// Types and validation shared between the API Routes and the Server Actions.
 //
-// Modélisation :
-// - ingredients : relation many-to-many via RecipeIngredient (nom d'ingrédient +
-//   quantité + unité). Ingredient et Unit sont des catalogues (name unique).
-// - steps : colonne Json (tableau de chaînes, une par étape).
-// - tags : many-to-many via RecipeTag.
+// Modeling:
+// - ingredients: many-to-many relation via RecipeIngredient (ingredient name +
+//   quantity + unit). Ingredient and Unit are catalogs (unique name).
+// - steps: Json column (array of strings, one per step).
+// - tags: many-to-many via RecipeTag.
 
 export type IngredientInput = {
   name: string;
@@ -33,7 +33,7 @@ export type ValidationResult =
   | { ok: true; data: RecipeInput }
   | { ok: false; errors: string[] };
 
-/** Lit une valeur Json inconnue comme un tableau de chaînes (pour l'affichage des étapes). */
+/** Reads an unknown Json value as an array of strings (for rendering steps). */
 export function asLines(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.map((v) => String(v)).filter((s) => s.trim().length > 0);
@@ -42,9 +42,9 @@ export function asLines(value: unknown): string[] {
 }
 
 /**
- * Normalise les étapes : un tableau de chaînes Markdown (une par étape). Chaque
- * étape est trimée (extrémités) — les retours à la ligne internes (Markdown) sont
- * conservés. Une chaîne unique est tolérée en rétro-compat (une étape par ligne).
+ * Normalizes the steps: an array of Markdown strings (one per step). Each step
+ * is trimmed (at both ends) — internal line breaks (Markdown) are preserved. A
+ * single string is tolerated for backward compatibility (one step per line).
  */
 function parseSteps(value: unknown): string[] {
   const arr = Array.isArray(value)
@@ -55,7 +55,7 @@ function parseSteps(value: unknown): string[] {
   return arr.map((v) => String(v).trim()).filter((s) => s.length > 0);
 }
 
-/** Découpe une liste de tags séparés par des virgules (ou un tableau). */
+/** Splits a comma-separated list of tags (or an array). */
 function splitTags(value: unknown): string[] {
   if (Array.isArray(value)) return asLines(value);
   if (typeof value !== "string") return [];
@@ -65,7 +65,7 @@ function splitTags(value: unknown): string[] {
     .filter((s) => s.length > 0);
 }
 
-/** Entier positif optionnel ; signale une erreur si fourni mais invalide. */
+/** Optional positive integer; reports an error if provided but invalid. */
 function toOptionalInt(
   value: unknown,
   field: string,
@@ -81,9 +81,9 @@ function toOptionalInt(
 }
 
 /**
- * Normalise un tableau d'ingrédients bruts ([{ name, quantity, unit }]).
- * Les lignes sans nom sont ignorées ; une quantité fournie mais non numérique
- * (ou négative) ajoute une erreur. La virgule décimale française est tolérée.
+ * Normalizes an array of raw ingredients ([{ name, quantity, unit }]).
+ * Rows without a name are ignored; a quantity that is provided but not numeric
+ * (or negative) adds an error. The French decimal comma is tolerated.
  */
 function parseIngredients(value: unknown, errors: string[]): IngredientInput[] {
   if (!Array.isArray(value)) return [];
@@ -94,7 +94,7 @@ function parseIngredients(value: unknown, errors: string[]): IngredientInput[] {
     const r = row as Record<string, unknown>;
 
     const name = typeof r.name === "string" ? r.name.trim() : "";
-    if (name.length === 0) continue; // ligne vide → ignorée
+    if (name.length === 0) continue; // empty row → ignored
 
     let quantity: number | null = null;
     const rawQty = r.quantity;
@@ -122,9 +122,9 @@ function parseIngredients(value: unknown, errors: string[]): IngredientInput[] {
 }
 
 /**
- * Normalise un tableau d'ustensiles bruts ([{ name, quantity }]).
- * Les lignes sans nom sont ignorées ; une quantité fournie mais non entière
- * (ou négative) ajoute une erreur.
+ * Normalizes an array of raw utensils ([{ name, quantity }]).
+ * Rows without a name are ignored; a quantity that is provided but not an
+ * integer (or negative) adds an error.
  */
 function parseUtensils(value: unknown, errors: string[]): UtensilInput[] {
   if (!Array.isArray(value)) return [];
@@ -135,7 +135,7 @@ function parseUtensils(value: unknown, errors: string[]): UtensilInput[] {
     const r = row as Record<string, unknown>;
 
     const name = typeof r.name === "string" ? r.name.trim() : "";
-    if (name.length === 0) continue; // ligne vide → ignorée
+    if (name.length === 0) continue; // empty row → ignored
 
     let quantity: number | null = null;
     const rawQty = r.quantity;
@@ -155,7 +155,7 @@ function parseUtensils(value: unknown, errors: string[]): UtensilInput[] {
 }
 
 /**
- * Valide et normalise une entrée brute (corps JSON d'API ou FormData converti).
+ * Validates and normalizes a raw input (API JSON body or converted FormData).
  */
 export function validateRecipeInput(raw: Record<string, unknown>): ValidationResult {
   const errors: string[] = [];
@@ -190,9 +190,9 @@ export function validateRecipeInput(raw: Record<string, unknown>): ValidationRes
 }
 
 /**
- * Extrait les champs depuis un FormData. Les lignes d'ingrédients sont envoyées
- * comme tableaux parallèles (ingredientName / ingredientQuantity / ingredientUnit),
- * recombinés ligne par ligne.
+ * Extracts the fields from a FormData. Ingredient rows are sent as parallel
+ * arrays (ingredientName / ingredientQuantity / ingredientUnit), recombined row
+ * by row.
  */
 export function recipeInputFromFormData(formData: FormData): ValidationResult {
   const names = formData.getAll("ingredientName");
@@ -220,14 +220,14 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
     cookTime: formData.get("cookTime"),
     ingredients,
     utensils,
-    steps: formData.getAll("step"), // un textarea par étape (StepEditor)
-    tags: formData.getAll("tag"), // un input hidden par tag (TagsCombobox)
+    steps: formData.getAll("step"), // one textarea per step (StepEditor)
+    tags: formData.getAll("tag"), // one hidden input per tag (TagsCombobox)
   });
 }
 
-// --- Helpers pour les écritures Prisma (objets simples, sans import Prisma) ---
+// --- Helpers for Prisma writes (plain objects, without importing Prisma) ---
 
-/** Champs scalaires de Recipe (steps reste une colonne Json). */
+/** Scalar fields of Recipe (steps stays a Json column). */
 export function recipeScalars(input: RecipeInput) {
   return {
     title: input.title,
@@ -240,9 +240,9 @@ export function recipeScalars(input: RecipeInput) {
 }
 
 /**
- * Lignes de jonction RecipeIngredient à créer : pour chaque ingrédient on crée
- * le lien (avec quantité + position) et on connecte/crée l'Ingredient et l'Unit
- * par leur `name` unique.
+ * RecipeIngredient join rows to create: for each ingredient we create the link
+ * (with quantity + position) and connect/create the Ingredient and the Unit by
+ * their unique `name`.
  */
 export function recipeIngredientsCreate(input: RecipeInput) {
   return input.ingredients.map((ing, position) => ({
@@ -262,9 +262,8 @@ export function recipeIngredientsCreate(input: RecipeInput) {
 }
 
 /**
- * Lignes de jonction RecipeUtensil à créer : pour chaque ustensile on crée le
- * lien (avec quantité + position) et on connecte/crée l'Utensil par son `name`
- * unique.
+ * RecipeUtensil join rows to create: for each utensil we create the link (with
+ * quantity + position) and connect/create the Utensil by its unique `name`.
  */
 export function recipeUtensilsCreate(input: RecipeInput) {
   return input.utensils.map((ust, position) => ({
@@ -277,8 +276,8 @@ export function recipeUtensilsCreate(input: RecipeInput) {
 }
 
 /**
- * Lignes de jonction RecipeTag à créer : pour chaque tag, on crée le lien et
- * on connecte (ou crée) le Tag par son `name` unique.
+ * RecipeTag join rows to create: for each tag, we create the link and connect
+ * (or create) the Tag by its unique `name`.
  */
 export function recipeTagsCreate(input: RecipeInput) {
   return input.tags.map((name) => ({
@@ -302,8 +301,9 @@ type RawRecipeUtensil = {
 };
 
 /**
- * Aplatit les relations `recipeTags`, `recipeIngredients` et `recipeUtensils` en
- * formes ergonomiques (`tags`, `ingredients`, `utensils`) pour l'API et les pages.
+ * Flattens the `recipeTags`, `recipeIngredients` and `recipeUtensils` relations
+ * into ergonomic shapes (`tags`, `ingredients`, `utensils`) for the API and the
+ * pages.
  */
 export function flattenRecipe<
   T extends {

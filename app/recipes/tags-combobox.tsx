@@ -9,9 +9,9 @@ import {
 import { useState } from "react";
 
 /**
- * Champ tags multi-valeur : chips + autocomplete (Headless UI Combobox) avec
- * création libre. Chaque tag sélectionné est posté via un <input hidden> de même
- * `name`, donc lisible côté Server Action avec formData.getAll(name).
+ * Multi-value tags field: chips + autocomplete (Headless UI Combobox) with
+ * free creation. Each selected tag is posted via a hidden <input> sharing the
+ * same `name`, so it's readable on the Server Action side via formData.getAll(name).
  */
 export function TagsCombobox({
   name,
@@ -47,7 +47,7 @@ export function TagsCombobox({
 
   return (
     <div>
-      {/* Valeurs postées au Server Action : un input par tag (getAll(name)). */}
+      {/* Values posted to the Server Action: one input per tag (getAll(name)). */}
       {selected.map((tag) => (
         <input key={tag} type="hidden" name={name} value={tag} />
       ))}

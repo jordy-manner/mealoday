@@ -37,8 +37,8 @@ export type RecipeFormValues = {
   cookTime: string;
   ingredients: { name: string; quantity: string; unit: string }[];
   utensils: { name: string; quantity: string }[];
-  steps: string[]; // une étape (Markdown) par élément
-  tags: string[]; // tags sélectionnés
+  steps: string[]; // one step (Markdown) per element
+  tags: string[]; // selected tags
 };
 
 const EMPTY: RecipeFormValues = {
@@ -70,7 +70,7 @@ const field =
   "rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900";
 const labelCls = "block text-sm font-medium mb-1";
 
-/** Poignée « burger » (☰) servant à glisser-déposer une ligne. */
+/** "Burger" handle (☰) used to drag-and-drop a row. */
 function DragHandleIcon() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -85,8 +85,8 @@ function DragHandleIcon() {
 }
 
 /**
- * Ligne triable : poignée de glissement (☰) + contenu. `id` doit être stable et
- * unique au sein du SortableContext. `className` porte la mise en page de la ligne.
+ * Sortable row: drag handle (☰) + content. `id` must be stable and unique
+ * within the SortableContext. `className` carries the row's layout.
  */
 function SortableRow({
   id,
@@ -142,15 +142,15 @@ export function RecipeForm({
 }) {
   const [state, formAction] = useActionState(action, { error: null });
 
-  // Capteurs partagés (souris/tactile + clavier pour l'accessibilité). Une petite
-  // distance d'activation évite de déclencher un tri sur un simple clic.
+  // Shared sensors (mouse/touch + keyboard for accessibility). A small
+  // activation distance avoids triggering a sort on a plain click.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  // Lignes d'ingrédients gérées en état (au moins une ligne visible). Les clés
-  // initiales sont l'index ; le compteur démarre après pour les ajouts ultérieurs.
+  // Ingredient rows managed in state (at least one visible row). The initial
+  // keys are the index; the counter starts after that for subsequent additions.
   const initialRows = defaultValues.ingredients.length
     ? defaultValues.ingredients
     : [{ name: "", quantity: "", unit: "" }];
@@ -177,7 +177,7 @@ export function RecipeForm({
     });
   };
 
-  // Lignes d'ustensiles (nom + quantité), liste optionnelle (peut être vide).
+  // Utensil rows (name + quantity), optional list (can be empty).
   const initialUtensils = defaultValues.utensils;
   const utensilKey = useRef(initialUtensils.length);
   const [utensils, setUtensils] = useState<UtensilRow[]>(
@@ -201,7 +201,7 @@ export function RecipeForm({
     });
   };
 
-  // Lignes d'étapes (Markdown), au moins une visible.
+  // Step rows (Markdown), at least one visible.
   const initialSteps = defaultValues.steps.length ? defaultValues.steps : [""];
   const stepKey = useRef(initialSteps.length);
   const [steps, setSteps] = useState<StepRow[]>(
@@ -271,11 +271,11 @@ export function RecipeForm({
         </div>
       </div>
 
-      {/* Ingrédients : lignes dynamiques réordonnables (poignée · nom · quantité · unité) */}
+      {/* Ingredients: dynamic reorderable rows (handle · name · quantity · unit) */}
       <div>
         <span className={labelCls}>Ingrédients</span>
         <div className="flex flex-col gap-2">
-          {/* En-têtes de colonnes (l'espace initial w-6 correspond à la poignée) */}
+          {/* Column headers (the initial w-6 space matches the handle) */}
           <div className="hidden gap-2 text-xs text-zinc-500 sm:flex">
             <span className="w-6" />
             <span className="flex-1">Ingrédient</span>
@@ -344,7 +344,7 @@ export function RecipeForm({
           + Ajouter un ingrédient
         </button>
 
-        {/* Suggestions d'autocomplétion (création libre possible) */}
+        {/* Autocomplete suggestions (free creation allowed) */}
         <datalist id="ingredient-options">
           {ingredientOptions.map((o) => (
             <option key={o} value={o} />
@@ -357,7 +357,7 @@ export function RecipeForm({
         </datalist>
       </div>
 
-      {/* Ustensiles : lignes dynamiques réordonnables (poignée · nom · quantité) */}
+      {/* Utensils: dynamic reorderable rows (handle · name · quantity) */}
       <div>
         <span className={labelCls}>
           Ustensiles <span className="text-zinc-500">(facultatif)</span>
@@ -430,7 +430,7 @@ export function RecipeForm({
         </datalist>
       </div>
 
-      {/* Étapes : lignes dynamiques réordonnables, chaque étape en Markdown */}
+      {/* Steps: dynamic reorderable rows, each step in Markdown */}
       <div>
         <span className={labelCls}>
           Étapes <span className="text-zinc-500">(Markdown · une étape par bloc)</span>

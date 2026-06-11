@@ -1,9 +1,9 @@
 import { PrismaClient } from "@/app/generated/prisma/client";
 import { PrismaNeon } from "@prisma/adapter-neon";
 
-// Prisma 7 ne lit plus l'URL depuis le schema : on passe un driver adapter
-// au constructeur. Pour Neon (serverless/Vercel) on utilise le Pool WebSocket,
-// qui supporte les transactions interactives.
+// Prisma 7 no longer reads the URL from the schema: we pass a driver adapter
+// to the constructor. For Neon (serverless/Vercel) we use the WebSocket Pool,
+// which supports interactive transactions.
 const connectionString = process.env.DATABASE_URL;
 
 if (!connectionString) {
@@ -12,8 +12,8 @@ if (!connectionString) {
 
 const adapter = new PrismaNeon({ connectionString });
 
-// Singleton : en dev, le hot-reload de Next recrée le module à chaque édition.
-// On stocke l'instance sur globalThis pour éviter d'ouvrir un pool par reload.
+// Singleton: in dev, Next's hot-reload recreates the module on every edit.
+// We store the instance on globalThis to avoid opening a pool per reload.
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };

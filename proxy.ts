@@ -1,18 +1,18 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Mode maintenance (Next 16 : "Proxy", ex-Middleware). Quand APP_MAINTENANCE est
-// vrai, toute requête renvoie une page 503 « En construction » — sauf bypass propriétaire.
-// Piloté par env : activé uniquement sur la Production Vercel ; off en Preview/local.
+// Maintenance mode (Next 16: "Proxy", formerly Middleware). When APP_MAINTENANCE
+// is true, every request returns a 503 « En construction » page — except for the
+// owner bypass. Driven by env: enabled only on Vercel Production; off in Preview/local.
 //
-// Le Proxy tourne sur le runtime Node.js (défaut en Next 16) → l'env est lu au
-// RUNTIME (pas figé au build). Toggler APP_MAINTENANCE nécessite tout de même un
-// redeploy, car Vercel lie les variables d'env à un déploiement donné.
+// The Proxy runs on the Node.js runtime (the default in Next 16) → the env is read
+// at RUNTIME (not frozen at build time). Toggling APP_MAINTENANCE still requires a
+// redeploy, since Vercel binds env variables to a given deployment.
 
 const BYPASS_COOKIE = "mnt_bypass";
 
-// Accepte les valeurs booléennes usuelles : true, 1, on, yes, y (insensible à la
-// casse et aux espaces). Tout le reste (vide, false, 0…) = désactivé.
+// Accepts the usual boolean values: true, 1, on, yes, y (case- and whitespace-
+// insensitive). Everything else (empty, false, 0…) = disabled.
 function isTruthy(value: string | undefined): boolean {
   return value != null && ["true", "1", "on", "yes", "y"].includes(value.trim().toLowerCase());
 }
@@ -50,19 +50,19 @@ const MAINTENANCE_HTML = `<!doctype html>
 </html>`;
 
 export function proxy(request: NextRequest) {
-  // Hors maintenance → laisser passer.
+  // Not in maintenance → let it through.
   if (!isTruthy(process.env.APP_MAINTENANCE)) {
     return NextResponse.next();
   }
 
   const bypassSecret = process.env.APP_MAINTENANCE_BYPASS;
 
-  // Bypass déjà accordé (cookie posé précédemment).
+  // Bypass already granted (cookie set previously).
   if (bypassSecret && request.cookies.get(BYPASS_COOKIE)?.value === bypassSecret) {
     return NextResponse.next();
   }
 
-  // Demande de bypass via ?unlock=<secret> → pose le cookie et nettoie l'URL.
+  // Bypass request via ?unlock=<secret> → sets the cookie and cleans up the URL.
   const unlock = request.nextUrl.searchParams.get("unlock");
   if (bypassSecret && unlock === bypassSecret) {
     const url = request.nextUrl.clone();
@@ -73,12 +73,12 @@ export function proxy(request: NextRequest) {
       secure: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7, // 7 jours
+      maxAge: 60 * 60 * 24 * 7, // 7 days
     });
     return res;
   }
 
-  // Sinon : page 503 « En construction ».
+  // Otherwise: 503 « En construction » page.
   return new NextResponse(MAINTENANCE_HTML, {
     status: 503,
     headers: {
@@ -89,7 +89,7 @@ export function proxy(request: NextRequest) {
   });
 }
 
-// S'applique à toutes les routes sauf les assets internes Next et le favicon.
+// Applies to all routes except Next's internal assets and the favicon.
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

@@ -9,7 +9,7 @@ import {
   validateRecipeInput,
 } from "@/lib/recipes";
 
-// En Next 16, les params d'une route dynamique sont asynchrones (Promise).
+// In Next 16, a dynamic route's params are asynchronous (Promise).
 type Params = { params: Promise<{ id: string }> };
 
 const withRelations = {
@@ -38,7 +38,7 @@ export async function GET(_request: Request, { params }: Params) {
   return NextResponse.json(flattenRecipe(recipe));
 }
 
-// PUT /api/recipes/[id] — mise à jour complète
+// PUT /api/recipes/[id] — full update
 export async function PUT(request: Request, { params }: Params) {
   const { id } = await params;
 
@@ -63,17 +63,17 @@ export async function PUT(request: Request, { params }: Params) {
     where: { id },
     data: {
       ...recipeScalars(result.data),
-      // Remplace l'ensemble des lignes d'ingrédients de la recette.
+      // Replace all of the recipe's ingredient rows.
       recipeIngredients: {
         deleteMany: {},
         create: recipeIngredientsCreate(result.data),
       },
-      // Remplace l'ensemble des lignes d'ustensiles de la recette.
+      // Replace all of the recipe's utensil rows.
       recipeUtensils: {
         deleteMany: {},
         create: recipeUtensilsCreate(result.data),
       },
-      // Remplace les liens de tags (les liens, pas les Tags eux-mêmes).
+      // Replace the tag links (the links, not the Tags themselves).
       recipeTags: { deleteMany: {}, create: recipeTagsCreate(result.data) },
     },
     include: withRelations,
@@ -90,7 +90,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "Recette introuvable" }, { status: 404 });
   }
 
-  // Lignes RecipeIngredient et RecipeTag supprimées en cascade (onDelete: Cascade).
+  // RecipeIngredient and RecipeTag rows are deleted in cascade (onDelete: Cascade).
   await prisma.recipe.delete({ where: { id } });
   return new NextResponse(null, { status: 204 });
 }

@@ -38,7 +38,7 @@ export default async function EditRecipePage({ params }: Props) {
 
   const recipe = flattenRecipe(row);
 
-  // updateRecipeAction(id, prevState, formData) → on fige l'id via bind.
+  // updateRecipeAction(id, prevState, formData) → we pin the id via bind.
   const action = updateRecipeAction.bind(null, recipe.id);
 
   return (

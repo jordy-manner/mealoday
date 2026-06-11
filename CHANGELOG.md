@@ -1,66 +1,71 @@
 # Changelog
 
-Toutes les évolutions notables du projet, par release. Versions au format `vMAJEUR.MINEUR.CORRECTIF` ; chaque release correspond à un tag git et à un déploiement Preview/Production Vercel.
+All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
+
+## [v0.1.14] — 2026-06-11
+
+- Switched all code comments and this `CHANGELOG.md` to English (UI text and seed data remain in French).
+- `preview-release` skill now requires updating the `CHANGELOG.md` (in English) on every release.
 
 ## [v0.1.13] — 2026-06-10
 
-- Ajout de ce `CHANGELOG.md` récapitulant les évolutions par release.
-- Correctif : `id` stable sur chaque zone de glisser-déposer pour supprimer un mismatch d'hydratation React.
+- Added this `CHANGELOG.md` summarizing changes by release.
+- Fix: stable `id` on each drag-and-drop zone to remove a React hydration mismatch.
 
 ## [v0.1.12] — 2026-06-10
 
-- Gestion des ustensiles de cuisine : relation many-to-many `Recipe`↔`Utensil` (jonction `RecipeUtensil` avec quantité et position).
-- Catalogue d'ustensiles prérempli (ustensiles de base + déclinaisons par diamètre : moules, casseroles, poêles, crêpières…).
-- Saisie réordonnable dans le formulaire, affichage en page détail, prise en charge dans les Server Actions et l'API REST.
+- Kitchen utensils management: many-to-many relation `Recipe`↔`Utensil` (`RecipeUtensil` join model carrying quantity and position).
+- Prefilled utensil catalog (basic utensils + size variants by diameter: cake pans, saucepans, frying pans, crêpe pans…).
+- Reorderable input in the form, display on the detail page, support in Server Actions and the REST API.
 
 ## [v0.1.11] — 2026-06-10
 
-- Réordonnancement des ingrédients et des étapes par glisser-déposer (poignée « burger » ☰), à la souris, au tactile et au clavier.
+- Reordering of ingredients and steps via drag-and-drop (burger handle ☰), with mouse, touch, and keyboard support.
 
 ## [v0.1.10] — 2026-06-10
 
-- Étapes en Markdown : éditeur dédié par étape (barre d'outils au focus) et rendu enrichi.
+- Markdown steps: dedicated per-step editor (toolbar on focus) and rich rendering.
 
 ## [v0.1.9] — 2026-06-10
 
-- Mode maintenance plus tolérant, nettoyage et sortie du dossier `.claude` du dépôt.
+- More tolerant maintenance mode, cleanup, and removal of the `.claude` folder from the repository.
 
 ## [v0.1.8] — 2026-06-10
 
-- Mode maintenance (`proxy.ts`) avec bypass propriétaire.
+- Maintenance mode (`proxy.ts`) with owner bypass.
 
 ## [v0.1.7] — 2026-06-10
 
-- Découplage commit / déploiement via les skills `preview-release` (Preview) et `prod-release` (Production).
+- Decoupled commit / deployment via the `preview-release` (Preview) and `prod-release` (Production) skills.
 
 ## [v0.1.6] — 2026-06-10
 
-- Préparation du déploiement Vercel et ajustements de l'outillage.
+- Vercel deployment preparation and tooling adjustments.
 
 ## [v0.1.5] — 2026-06-10
 
-- Affichage de la version dans le pied de page (`APP_RELEASE`).
+- Display of the app version in the footer (`APP_RELEASE`).
 
 ## [v0.1.4] — 2026-06-09
 
-- Champ tags en autocomplétion (Headless UI Combobox).
+- Tags field with autocomplete (Headless UI Combobox).
 
 ## [v0.1.3] — 2026-06-09
 
-- Ingrédients structurés : catalogues `Ingredient` / `Unit` avec quantité.
+- Structured ingredients: `Ingredient` / `Unit` catalogs with quantity.
 
 ## [v0.1.2] — 2026-06-09
 
-- Skill de commit versionné ; exclusion de `settings.local.json`.
+- Versioned commit skill; exclusion of `settings.local.json`.
 
 ## [v0.1.1] — 2026-06-09
 
-- Ingrédients et tags en tables dédiées.
+- Ingredients and tags as dedicated tables.
 
 ## [v0.1.0] — 2026-06-09
 
-- CRUD des recettes.
+- Recipe CRUD.
 
 ## [v0.0.0] — 2026-06-09
 
-- Initialisation de l'application et configuration de la base de données.
+- Application bootstrap and database setup.

@@ -22,12 +22,12 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // lang="fr" : l'app est en français (accessibilité/SEO).
-  // suppressHydrationWarning sur <html> ET <body> : des extensions
-  // (traduction, ColorZilla, Grammarly…) réécrivent lang / style sur <html>
-  // ou injectent des attributs sur <body> après le rendu serveur, d'où un faux
-  // mismatch d'hydratation. L'option n'agit qu'au niveau de la balise où elle
-  // est posée ; les enfants restent vérifiés normalement.
+  // lang="fr": the app is in French (accessibility/SEO).
+  // suppressHydrationWarning on <html> AND <body>: extensions
+  // (translation, ColorZilla, Grammarly…) rewrite lang / style on <html>
+  // or inject attributes on <body> after server rendering, causing a false
+  // hydration mismatch. The option only acts at the level of the tag where it
+  // is set; children are still checked normally.
   return (
     <html
       lang="fr"
@@ -36,7 +36,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <div className="flex-1">{children}</div>
-        {/* Footer global : année courante + version de l'app (APP_RELEASE = tag git). */}
+        {/* Global footer: current year + app version (APP_RELEASE = git tag). */}
         <footer className="border-t border-zinc-200 px-6 py-4 text-center text-xs text-zinc-500 dark:border-zinc-800">
           © {new Date().getFullYear()} — Release: {process.env.APP_RELEASE ?? "dev"}
         </footer>

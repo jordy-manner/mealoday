@@ -1,5 +1,5 @@
 import { config } from "dotenv";
-// Charge .env.local (secrets) puis .env, comme prisma.config.ts.
+// Loads .env.local (secrets) then .env, like prisma.config.ts.
 config({ path: ".env.local" });
 config({ path: ".env" });
 
@@ -9,7 +9,7 @@ import { PrismaNeon } from "@prisma/adapter-neon";
 const adapter = new PrismaNeon({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
-// Catalogue d'unités courantes proposées en autocomplete dès le départ.
+// Catalog of common units offered in autocomplete from the start.
 const UNITS = [
   "g",
   "kg",
@@ -25,15 +25,15 @@ const UNITS = [
   "sachet",
 ];
 
-// Déclinaison « <base> <taille> cm » pour les ustensiles dont le diamètre compte
-// (plats, casseroles, poêles, crêpières, moules…).
+// "<base> <size> cm" variant for utensils whose diameter matters
+// (dishes, saucepans, frying pans, crepe pans, molds…).
 const sizes = (base: string, diametres: number[]) =>
   diametres.map((d) => `${base} ${d} cm`);
 
-// Catalogue d'ustensiles de cuisine de base. Les contenants/feux dont la taille
-// importe sont déclinés par diamètre — à ajuster au besoin.
+// Catalog of basic kitchen utensils. Containers/cookware whose size matters are
+// expanded by diameter — adjust as needed.
 const UTENSILS = [
-  // Petits ustensiles de base
+  // Small basic utensils
   "Cuillère en bois",
   "Fouet",
   "Spatule",
@@ -64,7 +64,7 @@ const UTENSILS = [
   "Blender",
   "Grille de refroidissement",
   "Emporte-pièce",
-  // Moules (déclinés par diamètre)
+  // Molds (expanded by diameter)
   ...sizes("Moule à manqué", [18, 20, 22, 24, 26, 28]),
   ...sizes("Moule à tarte", [24, 26, 28]),
   ...sizes("Moule à cake", [24, 26, 30]),
@@ -72,7 +72,7 @@ const UTENSILS = [
   "Moule à charlotte",
   "Moule à savarin",
   "Moule à muffins",
-  // Contenants / feux (déclinés par diamètre)
+  // Containers / cookware (expanded by diameter)
   ...sizes("Casserole", [14, 16, 18, 20, 24]),
   ...sizes("Poêle", [20, 24, 26, 28, 30]),
   ...sizes("Crêpière", [24, 26, 28, 30]),

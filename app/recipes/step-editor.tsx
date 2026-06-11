@@ -3,10 +3,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
 
 /**
- * Éditeur Markdown léger pour une étape : un <textarea> dont la barre d'outils
- * (gras, italique, liste, lien) n'apparaît qu'au focus. Insère la syntaxe
- * Markdown à la sélection. Contrôlé (value/onChange). Le `name` est porté par le
- * textarea pour la soumission (Server Action lit formData.getAll(name)).
+ * Lightweight Markdown editor for a single step: a <textarea> whose toolbar
+ * (bold, italic, list, link) only appears on focus. Inserts Markdown syntax at
+ * the selection. Controlled (value/onChange). The `name` is carried by the
+ * textarea for submission (the Server Action reads formData.getAll(name)).
  */
 export function StepEditor({
   name,
@@ -23,7 +23,7 @@ export function StepEditor({
   const [focused, setFocused] = useState(false);
   const pendingSel = useRef<[number, number] | null>(null);
 
-  // Restaure la sélection après une insertion (le textarea est contrôlé).
+  // Restore the selection after an insertion (the textarea is controlled).
   useLayoutEffect(() => {
     if (pendingSel.current && ref.current) {
       const [start, end] = pendingSel.current;
@@ -60,7 +60,7 @@ export function StepEditor({
   return (
     <div className="flex-1">
       {focused && (
-        // onMouseDown preventDefault : garder le focus du textarea au clic.
+        // onMouseDown preventDefault: keep the textarea focused on click.
         <div className="mb-1 flex gap-1" onMouseDown={(e) => e.preventDefault()}>
           <button type="button" className={btn} onClick={() => wrap("**", "**")} aria-label="Gras">
             <b>B</b>

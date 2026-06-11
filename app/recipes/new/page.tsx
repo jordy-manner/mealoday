@@ -5,7 +5,7 @@ import { RecipeForm } from "../recipe-form";
 
 export const metadata = { title: "Nouvelle recette" };
 
-// Catalogues (ingrédients/unités/tags) lus en DB → rendu à la demande.
+// Catalogs (ingredients/units/tags) read from the DB → rendered on demand.
 export const dynamic = "force-dynamic";
 
 export default async function NewRecipePage() {
