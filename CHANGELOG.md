@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.7] — 2026-06-11
+
+- **Responsive mobile navigation**: below `sm`, the top-bar nav (Accueil / Recettes / Saisons) was hidden with no alternative — added a **burger button** opening a right-side **drawer** (slide-in, backdrop, Escape, body scroll-lock, auto-close on navigation) with the nav links and a search shortcut. The "Créer" CTA collapses to an icon-only pill on mobile to make room; desktop is unchanged.
+
 ## [v0.2.6] — 2026-06-11
 
 - Aromatic herbs are now a **committed dataset** (`lib/data/herbs-seasonality.json`, validated with Zod in `lib/herbs.ts`) instead of an inline "demo" list. No maintained French open-data API exists for herbs, so the months are sourced agronomically (open-field / "plein champ"). Added **dill** and **tarragon** (8 herbs total) and tightened the months to real French open-field windows (e.g. basil now July–August). Dropped the `demo` flag and its "démo" badges — herbs are presented as sourced data with no carbon footprint (no ADEME equivalent).

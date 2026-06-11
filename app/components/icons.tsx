@@ -65,6 +65,7 @@ const paths: Record<string, ReactNode> = {
     </>
   ),
   grip: <path d="M4 6h16M4 12h16M4 18h16" />,
+  menu: <path d="M3 6h18M3 12h18M3 18h18" />,
   tool: (
     <path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.7 2.7-2-2 2.7-2.7Z" />
   ),
