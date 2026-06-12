@@ -2,6 +2,15 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.13] — 2026-06-12
+
+- Fix CI/deploy: the Prisma CLI now runs migrations against Neon's **direct
+  (unpooled)** connection (`DATABASE_URL_UNPOOLED` / `POSTGRES_URL_NON_POOLING`,
+  falling back to `DATABASE_URL`) in `prisma.config.ts`. `prisma migrate deploy`
+  takes a Postgres advisory lock that times out through the `-pooler` endpoint
+  (`P1002`), which had failed a Vercel build. The runtime app is unchanged (still
+  uses the pooled `DATABASE_URL` via the Neon adapter).
+
 ## [v0.2.12] — 2026-06-12
 
 - New **page-transition loader**: a root `app/loading.tsx` (Suspense fallback)

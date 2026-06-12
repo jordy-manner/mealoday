@@ -160,7 +160,12 @@ Rule: **use theme tokens only**, no hardcoded values. Home recipe layout = **Mag
   `rm -rf .next` → `npm run dev`.
 
 ## Environment variables
-- `DATABASE_URL` — Neon Postgres (secret, `.env.local` / Vercel).
+- `DATABASE_URL` — Neon Postgres, **pooled** endpoint (secret, `.env.local` / Vercel);
+  used by the runtime app via the Neon adapter (`lib/prisma.ts`).
+- `DATABASE_URL_UNPOOLED` — Neon **direct/unpooled** endpoint (same host without
+  `-pooler`). Used by the **Prisma CLI for migrations** (`prisma.config.ts`): advisory
+  locks time out through the pooler (`P1002`). Falls back to `DATABASE_URL` if unset.
+  Provided by the Neon Vercel integration; also add it to `.env.local`.
 - `APP_RELEASE` — current git tag, shown in the footer (committed in `.env`).
 - `APP_MAINTENANCE` / `APP_MAINTENANCE_BYPASS` — maintenance mode (`proxy.ts`).
 - `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` (+ optional
