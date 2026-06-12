@@ -2,6 +2,17 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.14] — 2026-06-12
+
+- **Carbon footprint back on `/saisons`**, now from a committed **ADEME Agribalyse**
+  snapshot (`lib/data/carbon-ademe.json`, ~99 produce vs the previous ~24), merged
+  into `lib/produce.ts` by slug (matched to the raw/fresh Agribalyse food, processed
+  forms excluded). Re-enables the carbon badge on cards, the "Empreinte carbone"
+  block (Source ADEME · Agribalyse) and the carbon sort. Produce without an
+  Agribalyse match keeps `ecv: null` (carbon UI hidden). No runtime API — the data
+  is committed (Agribalyse values have fuller boundaries, so some footprints rise,
+  e.g. greenhouse tomato/pepper).
+
 ## [v0.2.13] — 2026-06-12
 
 - Fix CI/deploy: the Prisma CLI now runs migrations against Neon's **direct

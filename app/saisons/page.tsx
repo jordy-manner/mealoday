@@ -66,8 +66,8 @@ export default async function SaisonsPage({
           Que cuisiner en <em className="italic text-accent">{monthName.toLowerCase()}</em>&nbsp;?
         </h1>
         <p className="mb-7 max-w-[560px] text-[18px] leading-relaxed text-ink-soft">
-          Fruits, légumes, légumineuses et herbes de saison, et les recettes à cuisiner
-          maintenant.
+          Fruits, légumes, légumineuses et herbes de saison, leur empreinte carbone, et les
+          recettes à cuisiner maintenant.
         </p>
         <SeasonControls
           products={produce}

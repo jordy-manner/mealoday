@@ -1,10 +1,13 @@
 // Seasonal produce dataset (fruits, vegetables, herbs, pulses) for /saisons.
 // Committed, Zod-validated, no external runtime API: lib/data/seasonality.json
 // (sources: Greenpeace, Interfel, chambres d'agriculture — see its _meta).
-// The dataset carries no carbon footprint, so ecv is null for every item.
+// Carbon footprint (ecv, kg CO2e/kg) comes from a committed ADEME Agribalyse
+// snapshot (lib/data/carbon-ademe.json), merged by slug; items without an
+// Agribalyse match keep ecv: null and their carbon UI stays hidden.
 
 import { z } from "zod";
 import seasonalityJson from "@/lib/data/seasonality.json";
+import carbonJson from "@/lib/data/carbon-ademe.json";
 import { hueForSlug, type Produce, type ProduceCategory } from "@/lib/seasons-data";
 
 const ItemSchema = z.object({
@@ -15,6 +18,10 @@ const ItemSchema = z.object({
 });
 
 const FileSchema = z.object({ items: z.array(ItemSchema).min(1) });
+
+const CarbonSchema = z.object({ ecv: z.record(z.string(), z.number().nonnegative()) });
+// Carbon footprint per produce slug (kg CO2e/kg), from the committed ADEME snapshot.
+const CARBON = CarbonSchema.parse(carbonJson).ecv;
 
 // Source categories are unaccented; map them to the displayed (accented) ones.
 const CATEGORY: Record<z.infer<typeof ItemSchema>["category"], ProduceCategory> = {
@@ -33,7 +40,7 @@ export const PRODUCE: Produce[] = items
     name: it.label,
     slug: it.slug,
     months: [...new Set(it.months.filter((m) => m >= 1 && m <= 12))].sort((a, b) => a - b),
-    ecv: null,
+    ecv: CARBON[it.slug] ?? null,
     category: CATEGORY[it.category],
     hue: hueForSlug(it.slug),
   }))

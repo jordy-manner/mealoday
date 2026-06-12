@@ -118,6 +118,9 @@ behaviour stays uniform; because both are `fixed`, the `<body>` reserves space w
   (`ingredientMatches`) lives in `lib/seasons-data.ts` (pure, client-safe).
 - `lib/produce.ts` — loads `lib/data/seasonality.json` (Zod-validated) into the
   `Produce[]` used by `/saisons`. Categories: fruits, légumes, légumineuses, herbes.
+  Merges the carbon footprint (`ecv`) by slug from a committed ADEME **Agribalyse**
+  snapshot (`lib/data/carbon-ademe.json`, ~99 items, raw/fresh foods); items without
+  an Agribalyse match keep `ecv: null`.
 - `lib/seasons.ts` — `getProduce()` (returns the committed dataset) + recipe↔produce
   matching for `/saisons`.
 - `lib/media.ts` — media abstraction.
@@ -173,5 +176,7 @@ Rule: **use theme tokens only**, no hardcoded values. Home recipe layout = **Mag
 - `PEXELS_API_KEY` — seasonal calendar produce images (`lib/pexels.ts`, server-only,
   cached). Unset → gradient placeholders. The seasonal produce itself (fruits,
   vegetables, pulses, herbs) is a committed, Zod-validated dataset
-  (`lib/data/seasonality.json` via `lib/produce.ts`) — no external runtime API. It
-  carries no carbon footprint, so `ecv` is null and the carbon UI degrades.
+  (`lib/data/seasonality.json` via `lib/produce.ts`) — no external runtime API. The
+  carbon footprint (`ecv`) is merged from a committed ADEME **Agribalyse** snapshot
+  (`lib/data/carbon-ademe.json`, ~99 items); produce without an Agribalyse match keeps
+  `ecv: null` and its carbon UI stays hidden.

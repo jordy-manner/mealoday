@@ -107,7 +107,8 @@ export function ProductDetail({
                 </span>
               </div>
               <p className="text-[12.5px] leading-relaxed text-ink-faint">
-                Privilégier les produits locaux et de pleine saison réduit l&apos;empreinte.
+                Source ADEME · Agribalyse. Privilégier les produits locaux et de pleine saison
+                réduit l&apos;empreinte.
               </p>
             </>
           ) : (

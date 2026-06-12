@@ -1,7 +1,7 @@
 // Seasonal calendar types and pure logic. The produce dataset itself lives in
-// lib/data/seasonality.json (loaded + validated by lib/produce.ts). The dataset
-// has no carbon footprint, so ecv is null for every item; the carbon UI simply
-// degrades (badges hidden, "non disponible" on the detail page).
+// lib/data/seasonality.json (loaded + validated by lib/produce.ts); the carbon
+// footprint (ecv) is merged from an ADEME snapshot (lib/data/carbon-ademe.json).
+// Items not covered by ADEME keep ecv: null and their carbon UI stays hidden.
 
 export type ProduceCategory = "fruits" | "légumes" | "herbes" | "légumineuses";
 
@@ -9,7 +9,7 @@ export type Produce = {
   name: string;
   slug: string;
   months: number[]; // 1..12
-  ecv: number | null; // kg CO2e / kg (currently null — dataset has no carbon data)
+  ecv: number | null; // kg CO2e / kg (ADEME; null when ADEME doesn't cover it)
   category: ProduceCategory;
   image?: string; // optional custom image, takes priority over Pexels
   hue: number; // deterministic, for the warm placeholder gradient
