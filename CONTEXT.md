@@ -79,6 +79,15 @@ fixed bottom **tab bar** (`MobileTabBar`, client) takes over: Accueil · Recette
 the secondary destinations. The `<body>` carries a bottom padding on mobile so the
 fixed bar never hides the footer/content.
 
+**Pinned-chrome invariant (all pages).** Both bars live in the **root layout**
+(`app/layout.tsx`), so on **every** page the header is pinned to the top (`TopBar`,
+`sticky top-0 z-40`) and, on mobile, the tab bar is pinned to the bottom
+(`MobileTabBar`, `fixed bottom-0 z-40`) — from first paint and throughout scroll,
+on the home, catalogue, recipe detail/edit/create, `/saisons`, and the stub pages
+alike. Keep these two components in the root layout (never per-page) so the
+behaviour stays uniform; the `<body>`'s `pb-[…] sm:pb-0` reserves space for the
+bottom bar.
+
 ## Architecture
 - **Reads** = Server Components querying Prisma directly (`export const dynamic = "force-dynamic"`).
 - **Search** is done **server-side** via `searchParams` + Prisma (keyword, by-ingredient

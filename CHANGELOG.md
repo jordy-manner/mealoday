@@ -2,6 +2,14 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.10] — 2026-06-12
+
+- Docs: document the **pinned-chrome invariant** in `CONTEXT.md` — the header
+  (`TopBar`, sticky top) and, on mobile, the bottom tab bar (`MobileTabBar`, fixed
+  bottom) live in the root layout and stay pinned on **every** page. No behaviour
+  change (verified already uniform across home, catalogue, recipe detail/form,
+  `/saisons`, and stubs); the note keeps it that way.
+
 ## [v0.2.9] — 2026-06-11
 
 - **Recipe seasonality**: a recipe now declares how its in-season months are
