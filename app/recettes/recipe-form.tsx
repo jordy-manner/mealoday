@@ -504,6 +504,14 @@ export function RecipeForm({
         {/* Hidden inputs mirroring the controlled scalar/photo fields. */}
         <input ref={fileRef} type="file" name="photo" accept="image/*" hidden onChange={onPhoto} />
         <input type="hidden" name="removePhoto" value={removed ? "true" : "false"} />
+        {/* Carry a pre-filled (e.g. web-imported) image URL through submit when
+            the user neither uploaded a file nor removed it. */}
+        {defaultValues.imageUrl &&
+          preview === defaultValues.imageUrl &&
+          !removed &&
+          /^https?:\/\//i.test(defaultValues.imageUrl) && (
+            <input type="hidden" name="prefilledImageUrl" value={defaultValues.imageUrl} />
+          )}
         <input type="hidden" name="difficulty" value={f.difficulty ?? ""} />
         <input type="hidden" name="popular" value={f.popular ? "true" : "false"} />
         {f.categories.map((c) => (

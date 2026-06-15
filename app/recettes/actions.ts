@@ -60,6 +60,12 @@ async function resolveImage(
     return { imageUrl: null, imagePublicId: null };
   }
 
+  // No upload: a web-imported image URL (no previous asset) is stored as-is.
+  const prefilled = formData.get("prefilledImageUrl");
+  if (!previous?.imageUrl && typeof prefilled === "string" && /^https?:\/\//i.test(prefilled)) {
+    return { imageUrl: prefilled, imagePublicId: null };
+  }
+
   // No change: keep whatever was already stored (null on create).
   return {
     imageUrl: previous?.imageUrl ?? null,

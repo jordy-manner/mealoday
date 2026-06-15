@@ -2,6 +2,19 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.1] — 2026-06-15
+
+- **Recipe creation — web import** (design handoff `import`, stage 2/3): the
+  "Importer depuis le web" card is now live. Paste a URL → the
+  **`extractRecipeFromUrl`** server action fetches the page **server-side**
+  (timeout + clear errors) and parses **schema.org/Recipe** (JSON-LD preferred,
+  handles `@graph`; `HowToStep`/`HowToSection` instructions; ISO-8601 durations →
+  minutes; `recipeYield` → servings; ingredient lines split into
+  quantity/unit/name; image), pre-filling the form. The origin URL is added as
+  the first source (with a "Source pré-remplie" banner). A title fallback
+  (og:title / `<h1>` / `<title>`) covers pages without JSON-LD. All fields stay
+  editable; a web-imported image URL is persisted as-is.
+
 ## [v0.3.0] — 2026-06-15
 
 - **Recipe creation — method chooser + Sources** (design handoff `import`, stage

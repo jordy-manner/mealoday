@@ -81,9 +81,13 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
 - `/recettes/nouvelle` — create. Opens on a **method chooser** (`CreateFlow`,
   client): **Importer depuis le web** / **Scanner une photo** (OCR) / **Saisie
   manuelle**; the method is mirrored to `?method=`, each sub-step + the manual
-  form have a "Retour aux choix" button. Web-crawl and OCR are being rolled out
-  across v0.3 (cards disabled "Bientôt" until shipped); manual entry is live. The
-  form carries a **Sources** section (multi URLs / free text → `RecipeSource`).
+  form have a "Retour aux choix" button. **Web import** is live (paste a URL →
+  `extractRecipeFromUrl` server action fetches the page server-side and parses
+  **schema.org/Recipe** — JSON-LD preferred, incl. `@graph`, with a title
+  fallback — prefilling title/description/ingredients/steps/times/servings/image,
+  the URL added as the first source; fields stay editable). **OCR** ships later
+  in v0.3 (card "Bientôt"); manual entry is live. The form carries a **Sources**
+  section (multi URLs / free text → `RecipeSource`).
 - `/saisons` — **seasonal calendar** (client-driven `SeasonsBrowser`, state synced
   to the URL): **multi-month selection** (`?m=6,7,8`, default = current month, an
   explicit empty set is `?m=none`) — a product shows when its months intersect the
@@ -276,7 +280,8 @@ rendering, which these pages already are).
 - `app/recettes/` — `page.tsx` (list/search), `home-screen` (search UI), `recipe-detail`,
   `recipe-form` (+ `step-editor`, `tags-combobox`, `form-combobox` = shared combobox +
   unit-create modal), `actions.ts`, `catalog-actions.ts` (on-the-fly catalog creation),
-  `[slug]/`, `nouvelle/`.
+  `[slug]/`, `nouvelle/` (`create-flow` = method chooser + web-crawl sub-step),
+  `import-actions.ts` (`extractRecipeFromUrl`: server-side fetch + schema.org/Recipe parsing).
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),
