@@ -50,12 +50,14 @@ export function ProductDetail({
   const tier = product.ecv != null ? carbonTier(product.ecv) : null;
   const tierColor =
     tier === "low"
-      ? "text-veg"
+      ? "text-carbon-low"
       : tier === "med"
-        ? "text-amber"
+        ? "text-carbon-med"
         : tier === "high"
-          ? "text-accent"
+          ? "text-carbon-high"
           : "text-ink";
+  // Soft pill fills reuse the semantic soft families (carbon tiers have no soft
+  // variant): low↔veg, med↔amber, high↔accent.
   const tierBadge =
     tier === "low"
       ? "bg-veg-soft text-veg"

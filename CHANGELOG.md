@@ -2,6 +2,23 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.2.27] — 2026-06-15
+
+- **Design system formalised** (design handoff `design_system`): add **`DESIGN.md`**
+  at the repo root as the single source of truth for the visual system (identity,
+  colours, typography, spacing/radii/shadows, themes, accents, components, tone),
+  referenced from `AGENTS.md` and `CONTEXT.md`.
+- **`@theme` aligned to `DESIGN.md`**: content width 1180 → **1200px**; add carbon
+  footprint tier tokens **`--color-carbon-low/med/high`** (#4b8b5a / #cc8d2e /
+  #d8582e); the seasonal views now colour the carbon indicator via `text-carbon-*`
+  / `bg-carbon-*` instead of reusing veg/amber/accent. Dead `tailwind/theme.v4.css`
+  reference removed.
+- **Token sync guard**: `npm run check:design` (`scripts/check-design.mjs`) parses
+  the hex/values of `DESIGN.md` vs the `@theme` and fails on any divergence; wired
+  into `vercel-build` (a drift breaks the deploy). The sync rule (DESIGN.md +
+  @theme + theme.ts, same change) is documented in `AGENTS.md` and the
+  `preview-release` checklist.
+
 ## [v0.2.26] — 2026-06-15
 
 - **`assign-unit-types` maintenance script** (`scripts/assign-unit-types.ts`,

@@ -264,17 +264,25 @@ rendering, which these pages already are).
   per-section counts, consumed by the bell, the mobile "Plus" badge, and the settings rail.
 - `app/loading.tsx` — root navigation fallback (Suspense): renders `<Loader>` in the
   content area during route transitions that actually suspend (the nav chrome stays).
-- `app/layout.tsx` — fonts + TopBar + Footer. `app/globals.css` — design tokens.
+- `app/layout.tsx` — fonts + TopBar + Footer. `app/globals.css` — design tokens (`@theme`).
+- `DESIGN.md` — design-system source of truth (mirrors `@theme`); `scripts/check-design.mjs`
+  (`npm run check:design`, run in `vercel-build`) fails if the two diverge.
 - `app/manifest.ts`, `app/icon.svg`, `app/apple-icon.png` — favicon / PWA icons.
 
 ## Design system
-Frozen variant **“Gourmand Arrondi · Terracotta · Magazine”** (handoff in `.design/`,
-unversioned). Tokens in `app/globals.css` mirror `tailwind/theme.v4.css`:
+Frozen variant **“Gourmand Arrondi · Terracotta · Magazine”**. **`DESIGN.md` (repo
+root) is the single source of truth** (identity, colours, typography, spacing,
+components, tone) — read it before any UI work. The Tailwind v4 `@theme` in
+`app/globals.css` is the running implementation that `DESIGN.md` mirrors; tokens:
 `bg-bg`, `bg-surface`, `bg-surface-muted`, `text-ink`/`-soft`/`-faint`, `border-line`/`-soft`,
-`bg-accent`/`-deep`/`-soft`, `text-accent-ink`, `bg-veg`/`-soft`, `rounded-input` (14px) /
-`rounded-card` (22px), `shadow-card`/`-lg`, `max-w-content` (1180px), `font-display`/`-sans`/`-mono`.
-Rule: **use theme tokens only**, no hardcoded values. Home recipe layout = **Magazine**
-(1 full-width feature card + a 2-column grid).
+`bg-accent`/`-deep`/`-soft`, `text-accent-ink`, `bg-veg`/`-soft`, `bg-amber`/`-soft`/`text-amber-ink`,
+`text-carbon-low`/`-med`/`-high` (carbon tiers), `rounded-input` (14px) /
+`rounded-card` (22px), `shadow-card`/`-lg`, `max-w-content` (1200px), `font-display`/`-sans`/`-mono`.
+Rule: **use theme tokens only**, no hardcoded values. **Token sync** — any token
+change goes into `DESIGN.md` **and** the `@theme` (+ `theme.ts` for dark/accents) at
+once; `npm run check:design` (wired into `vercel-build`) fails on any divergence
+(see `DESIGN.md` §10). Home recipe layout = **Magazine** (1 full-width feature card
++ a 2-column grid).
 **Theme/accent (Apparence):** light/dark + 4 accents are a client preference
 (`localStorage`), applied by overriding the `--color-*` custom properties on
 `<html>` at runtime (Tailwind v4 utilities read those vars, so the whole app

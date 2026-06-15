@@ -2,10 +2,11 @@
 
 /*
  * Design system — frozen variant "Gourmand Arrondi · Terracotta · Magazine".
- * Token names mirror the official handoff theme (tailwind/theme.v4.css), so
- * they generate the documented utilities (bg-surface-muted, text-veg,
- * rounded-input, rounded-card, shadow-card, shadow-card-lg, max-w-content…).
- * Fonts come from next/font (app/layout.tsx) via the --font-* variables.
+ * These tokens are the running source of truth; DESIGN.md (repo root) mirrors
+ * them and `npm run check:design` fails the build if a value here diverges from
+ * it. They generate the documented utilities (bg-surface-muted, text-veg,
+ * text-carbon-*, rounded-input, rounded-card, shadow-card, shadow-card-lg,
+ * max-w-content…). Fonts come from next/font (app/layout.tsx) via --font-*.
  */
 @theme {
   /* Colors */
@@ -28,10 +29,15 @@
   --color-veg: #4b8b5a;
   --color-veg-soft: #d6f0da;
 
-  /* Amber — seasonal calendar (carbon "medium" tier, end-of-season state) */
+  /* Amber — warning / "À compléter" / end-of-season state */
   --color-amber: oklch(0.7 0.13 70);
   --color-amber-soft: oklch(0.93 0.06 78);
   --color-amber-ink: oklch(0.48 0.12 64);
+
+  /* Carbon footprint tiers (ADEME) — seasonal views */
+  --color-carbon-low: #4b8b5a;
+  --color-carbon-med: #cc8d2e;
+  --color-carbon-high: #d8582e;
 
   /* Typography (next/font variables, with literal fallbacks) */
   --font-display: var(--font-newsreader), "Newsreader", Georgia, serif;
@@ -47,7 +53,7 @@
   --shadow-card-lg: 0 4px 14px rgb(64 48 40 / 0.08), 0 12px 34px rgb(64 48 40 / 0.07);
 
   /* Content width → max-w-content */
-  --container-content: 1180px;
+  --container-content: 1200px;
 
   /* Animations */
   --animate-fade-up: fade-up 0.4s cubic-bezier(0.2, 0.7, 0.2, 1) both;

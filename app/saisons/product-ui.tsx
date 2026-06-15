@@ -70,7 +70,7 @@ export function CarbonBadge({
 }) {
   if (ecv == null) return null;
   const tier = carbonTier(ecv);
-  const dot = tier === "low" ? "bg-veg" : tier === "med" ? "bg-amber" : "bg-accent";
+  const dot = tier === "low" ? "bg-carbon-low" : tier === "med" ? "bg-carbon-med" : "bg-carbon-high";
   return (
     <span
       className={`inline-flex items-center gap-1.5 font-mono font-medium text-ink-soft ${big ? "text-[13px]" : "text-[11.5px]"}`}
