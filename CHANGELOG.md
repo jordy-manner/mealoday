@@ -2,6 +2,18 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.2] — 2026-06-15
+
+- **Recipe creation — OCR scan** (design handoff `import`, stage 3/3, completes
+  the import feature): the "Scanner une photo" method is now live. Import (or, on
+  mobile, shoot via `capture="environment"`) one or more photos, managed in a
+  thumbnail gallery; **Tesseract** (`tesseract.js`, **client-side** so the image
+  never leaves the device, `fra`+`eng`, live progress %) recognizes the text,
+  concatenated across images in order. A heuristic splits it into
+  title/ingredients/steps (source = "Photo importée"); all fields stay editable.
+- Extract the ingredient-line parser (quantity/unit/name) into a shared
+  client-safe `lib/recipe-parse.ts`, reused by the web-crawl and OCR paths.
+
 ## [v0.3.1] — 2026-06-15
 
 - **Recipe creation — web import** (design handoff `import`, stage 2/3): the

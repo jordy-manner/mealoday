@@ -6,6 +6,7 @@
 // stay fully editable) and the origin URL is added as the first source.
 
 import type { RecipeFormValues } from "./recipe-form";
+import { parseIngredientLine } from "@/lib/recipe-parse";
 
 export type ExtractResult =
   | { ok: true; values: RecipeFormValues }
@@ -89,47 +90,6 @@ function isoToMinutes(d: unknown): string {
   const min = Number(m[2] ?? 0);
   const total = h * 60 + min;
   return total > 0 ? String(total) : "";
-}
-
-const FRACTIONS: Record<string, number> = { "½": 0.5, "¼": 0.25, "¾": 0.75, "⅓": 1 / 3, "⅔": 2 / 3 };
-
-/** Parses a numeric quantity (decimal comma, simple fraction, unicode) → number|null. */
-function toNumber(raw: string): number | null {
-  const t = raw.trim();
-  if (t in FRACTIONS) return FRACTIONS[t];
-  const frac = t.match(/^(\d+)\s*\/\s*(\d+)$/);
-  if (frac) return Number(frac[1]) / Number(frac[2]);
-  const n = Number(t.replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-}
-
-// Known unit tokens (longest first) used to split "200 g de farine".
-const UNIT_WORDS = [
-  "c. à s.", "c. à c.", "càs", "càc", "cuillères", "cuillère", "kg", "mg", "g", "dl", "cl", "ml", "l",
-  "pincées", "pincée", "gousses", "gousse", "tranches", "tranche", "pièces", "pièce", "sachets",
-  "sachet", "verres", "verre", "tasses", "tasse", "bottes", "botte", "poignées", "poignée",
-];
-
-/** Splits a free ingredient line into { quantity, unit, name } (best-effort). */
-function parseIngredientLine(raw: string): { name: string; quantity: string; unit: string } {
-  const line = strip(raw);
-  if (!line) return { name: "", quantity: "", unit: "" };
-  const qm = line.match(/^([0-9]+(?:[.,][0-9]+)?(?:\s*\/\s*[0-9]+)?|[½¼¾⅓⅔])\s*(.*)$/);
-  if (!qm) return { name: line, quantity: "", unit: "" };
-  const num = toNumber(qm[1]);
-  if (num == null) return { name: line, quantity: "", unit: "" };
-  let rest = qm[2];
-  let unit = "";
-  for (const u of UNIT_WORDS) {
-    const re = new RegExp("^" + u.replace(/\./g, "\\.").replace(/\s/g, "\\s*") + "(?=\\s|$)", "i");
-    if (re.test(rest)) {
-      unit = u;
-      rest = rest.replace(re, "");
-      break;
-    }
-  }
-  rest = rest.replace(/^\s*(?:de\s+|d['’]\s*)/i, "").trim();
-  return { name: rest || line, quantity: String(num), unit };
 }
 
 /** schema.org recipeInstructions (string | HowToStep[] | HowToSection[]) → string[]. */
@@ -216,7 +176,7 @@ function mapRecipeNode(node: Record<string, unknown>, url: string): RecipeFormVa
   const ing = node.recipeIngredient ?? node.ingredients;
   if (Array.isArray(ing)) {
     values.ingredients = ing
-      .map((line) => parseIngredientLine(String(line)))
+      .map((line) => parseIngredientLine(strip(line)))
       .filter((r) => r.name)
       .map((r) => ({ ...r, isPrimary: false }));
   }

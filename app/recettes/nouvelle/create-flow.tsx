@@ -1,10 +1,186 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { Icon, type IconName } from "../../components/icons";
-import { RecipeForm, type IngredientOption, type RecipeFormValues, type UnitOption } from "../recipe-form";
+import {
+  EMPTY_RECIPE_VALUES,
+  RecipeForm,
+  type IngredientOption,
+  type RecipeFormValues,
+  type UnitOption,
+} from "../recipe-form";
 import type { FormState } from "../actions";
 import { extractRecipeFromUrl } from "../import-actions";
+import { parseIngredientLine } from "@/lib/recipe-parse";
+
+/** Splits raw OCR text into a recipe (heuristic; fields stay editable). The first
+ *  line is the title; lines with a leading quantity or short label are ingredients,
+ *  longer sentences are steps. Source defaults to "Photo importée". */
+function parseOcrText(text: string): RecipeFormValues {
+  const values: RecipeFormValues = { ...EMPTY_RECIPE_VALUES };
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/\s+/g, " ").trim())
+    .filter(Boolean);
+  if (!lines.length) return values;
+
+  values.title = lines[0];
+  const hasQty = (l: string) =>
+    /^([0-9]+(?:[.,][0-9]+)?(?:\s*\/\s*[0-9]+)?|[½¼¾⅓⅔])\b/.test(l);
+  const ings: string[] = [];
+  const steps: string[] = [];
+  for (const l of lines.slice(1)) {
+    const words = l.split(/\s+/).length;
+    if (hasQty(l) || (words <= 5 && !/[.!?]$/.test(l))) ings.push(l);
+    else steps.push(l);
+  }
+  values.ingredients = ings.map((l) => ({ ...parseIngredientLine(l), isPrimary: false }));
+  values.steps = steps;
+  values.sources = ["Photo importée"];
+  return values;
+}
+
+/** OCR scan sub-step: import (or shoot on mobile) one or more photos, run
+ *  Tesseract client-side (fra+eng, the image never leaves the device), then
+ *  parse the recognized text into a prefilled recipe. */
+function ScanStep({
+  onBack,
+  onExtracted,
+}: {
+  onBack: () => void;
+  onExtracted: (values: RecipeFormValues) => void;
+}) {
+  const [images, setImages] = useState<{ url: string; file: File }[]>([]);
+  const [progress, setProgress] = useState<number | null>(null); // null = idle
+  const [error, setError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+
+  const addFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = [...(e.target.files ?? [])];
+    setImages((xs) => [...xs, ...files.map((file) => ({ url: URL.createObjectURL(file), file }))]);
+    e.target.value = "";
+  };
+  const removeImage = (i: number) =>
+    setImages((xs) => {
+      URL.revokeObjectURL(xs[i]?.url);
+      return xs.filter((_, x) => x !== i);
+    });
+
+  const run = async () => {
+    if (!images.length || progress !== null) return;
+    setError(null);
+    setProgress(0);
+    try {
+      const { createWorker } = await import("tesseract.js");
+      const total = images.length;
+      const done = { count: 0 };
+      const worker = await createWorker("fra+eng", 1, {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setProgress(Math.round(((done.count + m.progress) / total) * 100));
+          }
+        },
+      });
+      let text = "";
+      for (const img of images) {
+        const { data } = await worker.recognize(img.file);
+        text += data.text + "\n";
+        done.count += 1;
+        setProgress(Math.round((done.count / total) * 100));
+      }
+      await worker.terminate();
+      onExtracted(parseOcrText(text));
+    } catch {
+      setError("La reconnaissance a échoué. Réessayez ou saisissez la recette à la main.");
+      setProgress(null);
+    }
+  };
+
+  const busy = progress !== null;
+
+  return (
+    <div className="max-w-2xl animate-fade-up">
+      <BackToChoices onClick={onBack} />
+      <h1 className="mb-2 font-display text-[clamp(24px,3vw,32px)] font-medium tracking-[-0.02em]">
+        Scanner une recette
+      </h1>
+      <p className="mb-5 text-[15px] text-ink-soft">
+        Importez une ou plusieurs photos (livre, fiche manuscrite…). Le texte est reconnu sur votre
+        appareil puis structuré en recette. Tout reste modifiable ensuite.
+      </p>
+
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3">
+        {images.map((img, i) => (
+          <div key={img.url} className="relative aspect-square overflow-hidden rounded-input border border-line">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={img.url} alt="" className="h-full w-full object-cover" />
+            <button
+              type="button"
+              onClick={() => removeImage(i)}
+              aria-label="Supprimer l'image"
+              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/55 text-surface transition hover:bg-ink"
+            >
+              <Icon name="x" size={13} />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-input border-2 border-dashed border-line text-center text-ink-faint transition hover:border-accent hover:bg-accent-soft"
+        >
+          <Icon name="image" size={22} />
+          <span className="text-[12px]">Importer</span>
+        </button>
+        {/* Mobile camera capture (native). Hidden on desktop where there's no camera. */}
+        <button
+          type="button"
+          onClick={() => cameraRef.current?.click()}
+          className="flex aspect-square flex-col items-center justify-center gap-1.5 rounded-input border-2 border-dashed border-line text-center text-ink-faint transition hover:border-accent hover:bg-accent-soft sm:hidden"
+        >
+          <Icon name="camera" size={22} />
+          <span className="text-[12px]">Photo</span>
+        </button>
+      </div>
+
+      <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={addFiles} />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={addFiles} />
+
+      <p className="mt-3 text-[13px] text-ink-faint">
+        {images.length
+          ? `${images.length} image${images.length > 1 ? "s" : ""} à analyser`
+          : "Importez la ou les photos de votre recette — reconnaissance par Tesseract."}
+      </p>
+
+      {error && (
+        <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-input bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-ink">
+          <Icon name="alert" size={14} /> {error}
+        </p>
+      )}
+
+      <div className="mt-5">
+        <button
+          type="button"
+          onClick={run}
+          disabled={!images.length || busy}
+          className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-[15px] font-bold text-white shadow-card transition hover:bg-accent-deep disabled:opacity-60"
+        >
+          {busy ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+              Lecture du texte… {progress}%
+            </>
+          ) : (
+            <>
+              <Icon name="image" size={17} /> Analyser {images.length || ""}
+            </>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 // Method picker shown before the recipe form: import from the web, scan a photo
 // (OCR), or fill it in by hand. Stage 1 wires the chooser + manual entry; the
@@ -165,10 +341,12 @@ export function CreateFlow({
 }: FormProps & { initialMethod?: Method }) {
   const [method, setMethod] = useState<Method>(initialMethod ?? "choose");
   const [webValues, setWebValues] = useState<RecipeFormValues | null>(null);
+  const [scanValues, setScanValues] = useState<RecipeFormValues | null>(null);
 
   const select = (m: Method) => {
     setMethod(m);
     if (m !== "web") setWebValues(null);
+    if (m !== "scan") setScanValues(null);
     const url = m === "choose" ? "/recettes/nouvelle" : `/recettes/nouvelle?method=${m}`;
     window.history.replaceState(null, "", url);
   };
@@ -199,6 +377,23 @@ export function CreateFlow({
     );
   }
 
+  if (method === "scan") {
+    if (!scanValues) {
+      return <ScanStep onBack={() => select("choose")} onExtracted={setScanValues} />;
+    }
+    return (
+      <>
+        <BackToChoices onClick={() => select("choose")} />
+        <RecipeForm
+          {...formProps}
+          submitLabel="Publier la recette"
+          defaultValues={scanValues}
+          sourcePrefilled
+        />
+      </>
+    );
+  }
+
   return (
     <div className="animate-fade-up">
       <p className="eyebrow">Nouvelle recette</p>
@@ -219,7 +414,7 @@ export function CreateFlow({
           icon="camera"
           title="Scanner une photo"
           desc="Livre ou fiche manuscrite — reconnaissance de texte (OCR)."
-          soon
+          onClick={() => select("scan")}
         />
         <MethodCard
           icon="plus"

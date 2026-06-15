@@ -85,9 +85,13 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   `extractRecipeFromUrl` server action fetches the page server-side and parses
   **schema.org/Recipe** — JSON-LD preferred, incl. `@graph`, with a title
   fallback — prefilling title/description/ingredients/steps/times/servings/image,
-  the URL added as the first source; fields stay editable). **OCR** ships later
-  in v0.3 (card "Bientôt"); manual entry is live. The form carries a **Sources**
-  section (multi URLs / free text → `RecipeSource`).
+  the URL added as the first source; fields stay editable). **Scan/OCR** is live
+  too: import (or, on mobile, shoot via `capture`) one or more photos → **Tesseract**
+  (`tesseract.js`, client-side so the image never leaves the device, `fra`+`eng`,
+  progress %) recognizes the text, a heuristic splits it into title/ingredients/
+  steps (source = "Photo importée"). Manual entry is the third method. The form
+  carries a **Sources** section (multi URLs / free text → `RecipeSource`). Shared
+  ingredient-line parsing (quantity/unit/name) lives in `lib/recipe-parse.ts`.
 - `/saisons` — **seasonal calendar** (client-driven `SeasonsBrowser`, state synced
   to the URL): **multi-month selection** (`?m=6,7,8`, default = current month, an
   explicit empty set is `?m=none`) — a product shows when its months intersect the
@@ -280,8 +284,10 @@ rendering, which these pages already are).
 - `app/recettes/` — `page.tsx` (list/search), `home-screen` (search UI), `recipe-detail`,
   `recipe-form` (+ `step-editor`, `tags-combobox`, `form-combobox` = shared combobox +
   unit-create modal), `actions.ts`, `catalog-actions.ts` (on-the-fly catalog creation),
-  `[slug]/`, `nouvelle/` (`create-flow` = method chooser + web-crawl sub-step),
+  `[slug]/`, `nouvelle/` (`create-flow` = method chooser + web-crawl + OCR-scan sub-steps),
   `import-actions.ts` (`extractRecipeFromUrl`: server-side fetch + schema.org/Recipe parsing).
+- `lib/recipe-parse.ts` — client-safe ingredient-line parser (quantity/unit/name),
+  shared by the web-crawl and OCR import paths. OCR uses `tesseract.js` (client-side).
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),

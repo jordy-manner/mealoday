@@ -85,7 +85,7 @@ export type RecipeFormValues = {
   seasonMonths: number[];
 };
 
-const EMPTY: RecipeFormValues = {
+export const EMPTY_RECIPE_VALUES: RecipeFormValues = {
   title: "",
   description: "",
   servings: "",
@@ -233,7 +233,7 @@ function AddRowButton({ onClick, children }: { onClick: () => void; children: Re
 
 export function RecipeForm({
   action,
-  defaultValues = EMPTY,
+  defaultValues = EMPTY_RECIPE_VALUES,
   submitLabel,
   ingredientOptions,
   unitOptions,
