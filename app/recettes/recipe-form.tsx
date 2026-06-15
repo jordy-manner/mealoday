@@ -80,6 +80,7 @@ export type RecipeFormValues = {
   steps: string[];
   tags: string[];
   categories: string[];
+  sources: string[];
   seasonMode: SeasonMode;
   seasonMonths: number[];
 };
@@ -105,6 +106,7 @@ const EMPTY: RecipeFormValues = {
   steps: [],
   tags: [],
   categories: [],
+  sources: [],
   seasonMode: "AUTO",
   seasonMonths: [],
 };
@@ -240,6 +242,7 @@ export function RecipeForm({
   categoryOptions,
   unitTypeOptions,
   mediaEnabled = false,
+  sourcePrefilled = false,
 }: {
   action: (prev: FormState, formData: FormData) => Promise<FormState>;
   defaultValues?: RecipeFormValues;
@@ -251,6 +254,8 @@ export function RecipeForm({
   categoryOptions: string[];
   unitTypeOptions: { id: string; name: string }[];
   mediaEnabled?: boolean;
+  /** Shows a "source pre-filled" banner (web-import method). */
+  sourcePrefilled?: boolean;
 }) {
   const [state, formAction] = useActionState(action, { error: null });
 
@@ -371,6 +376,20 @@ export function RecipeForm({
       return from === -1 || to === -1 ? ss : arrayMove(ss, from, to);
     });
   };
+
+  // Source rows (where the recipe comes from; optional, can be empty).
+  const initialSources = defaultValues.sources.length ? defaultValues.sources : [""];
+  const sourceKey = useRef(initialSources.length);
+  const [sources, setSources] = useState<{ key: number; value: string }[]>(
+    initialSources.map((value, i) => ({ key: i, value })),
+  );
+  const updateSource = (key: number, value: string) =>
+    setSources((ss) => ss.map((s) => (s.key === key ? { ...s, value } : s)));
+  const addSource = () => setSources((ss) => [...ss, { key: sourceKey.current++, value: "" }]);
+  const removeSource = (key: number) =>
+    setSources((ss) =>
+      ss.length > 1 ? ss.filter((s) => s.key !== key) : [{ key: sourceKey.current++, value: "" }],
+    );
 
   const toggleCategory = (c: string) =>
     set({
@@ -914,7 +933,35 @@ export function RecipeForm({
           <AddRowButton onClick={addStep}>Ajouter une étape</AddRowButton>
         </Block>
 
-        {/* 6. Nutrition */}
+        {/* 6. Sources — where the recipe comes from (URL or free text). */}
+        <Block title="Sources" hint="d'où vient la recette, optionnel">
+          {sourcePrefilled && (
+            <p className="mb-3 inline-flex items-center gap-1.5 rounded-input bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-ink">
+              <Icon name="check" size={14} strokeWidth={2.4} /> Source pré-remplie depuis la page importée.
+            </p>
+          )}
+          <div className="flex flex-col gap-3">
+            {sources.map((source) => (
+              <div key={source.key} className="flex items-center gap-2.5">
+                <input
+                  name="source"
+                  value={source.value}
+                  onChange={(e) => updateSource(source.key, e.target.value)}
+                  placeholder="https://… ou « Livre : Le Grand Larousse, p.214 »"
+                  className={fieldCls}
+                />
+                <RemoveButton
+                  onClick={() => removeSource(source.key)}
+                  label="Supprimer cette source"
+                  disabled={sources.length <= 1 && !source.value}
+                />
+              </div>
+            ))}
+          </div>
+          <AddRowButton onClick={addSource}>Ajouter une source</AddRowButton>
+        </Block>
+
+        {/* 7. Nutrition */}
         <Block title="Infos nutritionnelles" hint="par portion, optionnel">
           <div className="flex flex-wrap gap-4">
             {([

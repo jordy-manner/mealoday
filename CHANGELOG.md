@@ -2,6 +2,19 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.0] — 2026-06-15
+
+- **Recipe creation — method chooser + Sources** (design handoff `import`, stage
+  1/3): `/recettes/nouvelle` now opens on a **method picker** (`CreateFlow`):
+  Importer depuis le web / Scanner une photo / Saisie manuelle, mirrored to
+  `?method=`, with a "Retour aux choix" button on the form. Web-crawl and OCR
+  ship in later v0.3 releases (cards disabled "Bientôt"); manual entry is live.
+- **Sources**: new **`RecipeSource`** model (`value` + `kind` enum `url|text`
+  derived from the value + `position`, owned by Recipe like Step) + migration.
+  The form gains a multi-source **Sources** section (URL or free text, add/remove,
+  "Source pré-remplie" banner ready for the web method); sources show on the
+  recipe page (URLs as links) and round-trip through create/edit.
+
 ## [v0.2.29] — 2026-06-15
 
 - **Timer alert** (widgets): the end-of-timer alarm now **repeats** (beep +

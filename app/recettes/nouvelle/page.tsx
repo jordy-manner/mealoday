@@ -3,14 +3,23 @@ import { prisma } from "@/lib/prisma";
 import { getMediaStore } from "@/lib/media";
 import { Icon } from "../../components/icons";
 import { createRecipeAction } from "../actions";
-import { RecipeForm } from "../recipe-form";
+import { CreateFlow } from "./create-flow";
 
 export const metadata = { title: "Nouvelle recette" };
 
 // Catalogs (ingredients/units/tags/categories) read from the DB → on demand.
 export const dynamic = "force-dynamic";
 
-export default async function NewRecipePage() {
+type Method = "choose" | "manual" | "web" | "scan";
+
+export default async function NewRecipePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ method?: string }>;
+}) {
+  const { method } = await searchParams;
+  const initialMethod: Method =
+    method === "manual" || method === "web" || method === "scan" ? method : "choose";
   const [ingredients, units, utensils, tags, categories, unitTypes] = await Promise.all([
     prisma.ingredient.findMany({
       orderBy: { name: "asc" },
@@ -31,24 +40,23 @@ export default async function NewRecipePage() {
       >
         <Icon name="back" size={18} /> Retour
       </Link>
-      <h1 className="mb-8 mt-3 font-display text-[clamp(30px,4vw,44px)] font-medium tracking-[-0.02em]">
-        Nouvelle recette
-      </h1>
-      <RecipeForm
-        action={createRecipeAction}
-        submitLabel="Publier la recette"
-        ingredientOptions={ingredients.map((i) => ({
-          name: i.name,
-          defaultUnit: i.defaultUnit?.name ?? null,
-          incomplete: !i.defaultUnitId || !i.aisleId,
-        }))}
-        unitOptions={units.map((u) => ({ name: u.name, abbreviation: u.abbreviation }))}
-        utensilOptions={utensils.map((u) => u.name)}
-        tagOptions={tags.map((t) => t.name)}
-        categoryOptions={categories.map((c) => c.name)}
-        unitTypeOptions={unitTypes}
-        mediaEnabled={getMediaStore().configured}
-      />
+      <div className="mt-3">
+        <CreateFlow
+          initialMethod={initialMethod}
+          action={createRecipeAction}
+          ingredientOptions={ingredients.map((i) => ({
+            name: i.name,
+            defaultUnit: i.defaultUnit?.name ?? null,
+            incomplete: !i.defaultUnitId || !i.aisleId,
+          }))}
+          unitOptions={units.map((u) => ({ name: u.name, abbreviation: u.abbreviation }))}
+          utensilOptions={utensils.map((u) => u.name)}
+          tagOptions={tags.map((t) => t.name)}
+          categoryOptions={categories.map((c) => c.name)}
+          unitTypeOptions={unitTypes}
+          mediaEnabled={getMediaStore().configured}
+        />
+      </div>
     </main>
   );
 }

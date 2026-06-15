@@ -9,6 +9,7 @@ import {
   recipeIngredientsCreate,
   recipeInputFromFormData,
   recipeScalars,
+  recipeSourcesCreate,
   recipeStepsCreate,
   recipeTagsCreate,
   recipeUtensilsCreate,
@@ -94,6 +95,7 @@ export async function createRecipeAction(
       recipeTags: { create: recipeTagsCreate(result.data) },
       recipeCategories: { create: recipeCategoriesCreate(result.data) },
       recipeSteps: { create: recipeStepsCreate(result.data) },
+      recipeSources: { create: recipeSourcesCreate(result.data) },
     },
   });
 
@@ -145,6 +147,7 @@ export async function updateRecipeAction(
         create: recipeCategoriesCreate(result.data),
       },
       recipeSteps: { deleteMany: {}, create: recipeStepsCreate(result.data) },
+      recipeSources: { deleteMany: {}, create: recipeSourcesCreate(result.data) },
     },
   });
 

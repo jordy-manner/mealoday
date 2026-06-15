@@ -33,6 +33,9 @@ All many-to-many relations use **explicit join tables** (project convention).
   `seasonMode` (enum **SeasonMode** `AUTO | MANUAL | ALWAYS`, default `AUTO`) +
   `seasonMonths` (`Int[]`, the active months 1–12, used only in MANUAL mode).
 - **Step** — ordered prep steps: `content` (Markdown) + `order`, FK to Recipe.
+- **RecipeSource** — where the recipe comes from: `value` + `kind` (enum
+  `SourceKind` `url | text`, derived from the value) + `position`, FK to Recipe
+  (owned, like Step). Edited from the form's "Sources" section.
 - **Ingredient** / **Unit** — reusable catalogs (`name` unique). Catalog fields
   edited from `/parametres`: Ingredient `aisle?` (grocery "rayon", FK to the
   **Aisle** referential), `defaultUnit?` (FK to Unit, the pre-filled unit),
@@ -75,7 +78,12 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   server-side search/filter when a query is active.
 - `/recettes/[slug]` — recipe detail (lookup by `slug`).
 - `/recettes/[slug]/modifier` — edit.
-- `/recettes/nouvelle` — create.
+- `/recettes/nouvelle` — create. Opens on a **method chooser** (`CreateFlow`,
+  client): **Importer depuis le web** / **Scanner une photo** (OCR) / **Saisie
+  manuelle**; the method is mirrored to `?method=`, each sub-step + the manual
+  form have a "Retour aux choix" button. Web-crawl and OCR are being rolled out
+  across v0.3 (cards disabled "Bientôt" until shipped); manual entry is live. The
+  form carries a **Sources** section (multi URLs / free text → `RecipeSource`).
 - `/saisons` — **seasonal calendar** (client-driven `SeasonsBrowser`, state synced
   to the URL): **multi-month selection** (`?m=6,7,8`, default = current month, an
   explicit empty set is `?m=none`) — a product shows when its months intersect the

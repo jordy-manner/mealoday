@@ -61,6 +61,18 @@ const steps = z.preprocess(
   z.array(z.string()),
 );
 
+/** Recipe sources: ordered list of non-empty strings (no comma-splitting — a
+ * free-text source may contain commas). One hidden input per source. */
+const sourceList = z.preprocess(
+  (v) =>
+    Array.isArray(v)
+      ? v.map((s) => String(s).trim()).filter(Boolean)
+      : typeof v === "string" && v.trim()
+        ? [v.trim()]
+        : [],
+  z.array(z.string()),
+);
+
 const nameOf = (r: unknown) =>
   r && typeof r === "object" ? String((r as Record<string, unknown>).name ?? "").trim() : "";
 
@@ -127,6 +139,7 @@ export const recipeInputSchema = z.object({
   steps,
   tags: stringList,
   categories: stringList,
+  sources: sourceList,
   seasonMode: z.preprocess(
     (v) => (typeof v === "string" ? v.toUpperCase() : v),
     z.enum(["AUTO", "MANUAL", "ALWAYS"]).default("AUTO"),

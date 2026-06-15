@@ -39,6 +39,7 @@ export type RecipeDetailData = {
   ingredients: { name: string; quantity: number | null; unit: string | null }[];
   utensils: { name: string; quantity: number | null }[];
   steps: string[];
+  sources: { value: string; kind: "url" | "text" }[];
 };
 
 /** Formats a scaled quantity: trims to 2 decimals, drops trailing zeros. */
@@ -321,6 +322,32 @@ export function RecipeDetail({
             </ol>
           ) : (
             <p className="text-ink-soft">Aucune étape renseignée.</p>
+          )}
+
+          {recipe.sources.length > 0 && (
+            <div className="mt-8 border-t border-line-soft pt-5">
+              <h3 className="mb-2 flex items-center gap-1.5 font-mono text-[12px] uppercase tracking-wide text-ink-faint">
+                <Icon name="globe" size={14} /> Sources
+              </h3>
+              <ul className="flex flex-col gap-1.5 text-[14px] text-ink-soft">
+                {recipe.sources.map((s, i) => (
+                  <li key={i} className="break-words">
+                    {s.kind === "url" ? (
+                      <a
+                        href={s.value}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="text-accent-ink underline underline-offset-2 hover:text-accent"
+                      >
+                        {s.value}
+                      </a>
+                    ) : (
+                      s.value
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </section>
       </div>

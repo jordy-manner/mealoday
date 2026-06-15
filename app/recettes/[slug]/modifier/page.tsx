@@ -33,6 +33,7 @@ export default async function EditRecipePage({ params }: Props) {
           orderBy: { position: "asc" },
         },
         recipeSteps: { orderBy: { order: "asc" } },
+        recipeSources: { orderBy: { position: "asc" } },
       },
     }),
     prisma.ingredient.findMany({
@@ -109,6 +110,7 @@ export default async function EditRecipePage({ params }: Props) {
           steps: recipe.steps,
           tags: recipe.tags.map((t) => t.name),
           categories: recipe.categories.map((c) => c.name),
+          sources: recipe.sources.map((s) => s.value),
           seasonMode: recipe.seasonMode,
           seasonMonths: recipe.seasonMonths,
         }}

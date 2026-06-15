@@ -74,6 +74,7 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
     steps: formData.getAll("step"), // one textarea per step (StepEditor)
     tags: formData.getAll("tag"), // one hidden input per tag (TagsCombobox)
     categories: formData.getAll("category"), // one hidden input per category
+    sources: formData.getAll("source"), // one hidden input per source
     seasonMode: formData.get("seasonMode"),
     seasonMonths: formData.getAll("seasonMonth"), // one hidden input per month
   });
@@ -106,6 +107,18 @@ export function recipeScalars(input: RecipeInput) {
 /** Step rows to create (content + order). */
 export function recipeStepsCreate(input: RecipeInput) {
   return input.steps.map((content, order) => ({ content, order }));
+}
+
+/** True when a source value is a web link (→ kind "url", else "text"). */
+const isUrl = (value: string) => /^https?:\/\//i.test(value.trim());
+
+/** RecipeSource rows to create: each source's value + derived kind + order. */
+export function recipeSourcesCreate(input: RecipeInput) {
+  return input.sources.map((value, position) => ({
+    value,
+    kind: (isUrl(value) ? "url" : "text") as "url" | "text",
+    position,
+  }));
 }
 
 /**
@@ -183,10 +196,12 @@ type RawRecipeUtensil = {
   position: number;
 };
 type RawStep = { content: string; order: number };
+type RawRecipeSource = { value: string; kind: "url" | "text"; position: number };
 
 /**
  * Flattens the relations into ergonomic shapes (`tags`, `categories`,
- * `ingredients`, `utensils`, `steps`) for the API and the pages.
+ * `ingredients`, `utensils`, `steps`, `sources`) for the API and the pages.
+ * `recipeSources` is optional so callers that don't query it still type-check.
  */
 export function flattenRecipe<
   T extends {
@@ -195,6 +210,7 @@ export function flattenRecipe<
     recipeIngredients: RawRecipeIngredient[];
     recipeUtensils: RawRecipeUtensil[];
     recipeSteps: RawStep[];
+    recipeSources?: RawRecipeSource[];
   },
 >(recipe: T) {
   const {
@@ -203,12 +219,14 @@ export function flattenRecipe<
     recipeIngredients,
     recipeUtensils,
     recipeSteps,
+    recipeSources,
     ...rest
   } = recipe;
   return {
     ...rest,
     tags: recipeTags.map((rt) => rt.tag),
     categories: recipeCategories.map((rc) => rc.category),
+    sources: (recipeSources ?? []).map((s) => ({ value: s.value, kind: s.kind })),
     ingredients: recipeIngredients.map((ri) => ({
       id: ri.ingredientId,
       name: ri.ingredient.name,

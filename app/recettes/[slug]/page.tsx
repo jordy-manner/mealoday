@@ -33,6 +33,7 @@ export default async function RecipeDetailPage({ params }: Props) {
         orderBy: { position: "asc" },
       },
       recipeSteps: { orderBy: { order: "asc" } },
+      recipeSources: { orderBy: { position: "asc" } },
     },
   });
 
@@ -104,6 +105,7 @@ export default async function RecipeDetailPage({ params }: Props) {
     })),
     utensils: flat.utensils.map((u) => ({ name: u.name, quantity: u.quantity })),
     steps: flat.steps,
+    sources: flat.sources,
   };
 
   return <RecipeDetail recipe={recipe} related={related} />;

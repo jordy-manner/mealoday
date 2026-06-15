@@ -65,6 +65,28 @@ model Recipe {
   recipeCategories  RecipeCategory[]
   // Ordered preparation steps (own table rather than a Json column).
   recipeSteps       Step[]
+  // Where the recipe comes from (URLs / free-text attributions). Own table.
+  recipeSources     RecipeSource[]
+}
+
+// How a recipe source is interpreted in the UI (link vs plain text).
+enum SourceKind {
+  url
+  text
+}
+
+// A source/attribution of a recipe: a URL ("https://…") or free text
+// ("Livre : Le Grand Larousse, p.214"). Owned by the recipe (own table, like
+// Step); `kind` drives the UI (clickable link vs text). Edited from the form.
+model RecipeSource {
+  id       String     @id @default(cuid())
+  recipe   Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+  value    String
+  kind     SourceKind @default(text)
+  position Int        @default(0) // display order within the recipe
+
+  @@index([recipeId])
 }
 
 // A single ordered preparation step of a recipe (Markdown content).
