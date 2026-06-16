@@ -45,8 +45,12 @@ next-env.d.ts
 
 /app/generated/prisma
 
-# claude code : outillage local, jamais versionné (skills, réglages, etc.)
-.claude/
+# claude code : settings/cache locaux non versionnés — skills versionnées
+.claude/settings.json
+.claude/settings.local.json
+.claude/todos/
+.claude/cache/
+.claude/plugins/
 
 # dossier de travail design (copier-coller depuis Claude design), non versionné
 .design/

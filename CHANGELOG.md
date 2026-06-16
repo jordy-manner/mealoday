@@ -2,6 +2,12 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.9] — 2026-06-16
+
+- **Skills versioned**: `.claude/skills/` (handoff, new-task, preview-release, prod-release) are now tracked in git so all worktrees and Claude windows share the same workflow commands.
+- **new-task skill**: new `/new-task` command — creates a GitHub issue, conventional branch (`feat/fix/chore/{number}-{slug}`), and a git worktree sibling to `main/` in one shot.
+- **.gitignore**: `.claude/` entries replaced with fine-grained ignores (settings, cache, plugins) to allow skills to be versioned.
+
 ## [v0.3.8] — 2026-06-16
 
 - **AGENTS.md — development workflow**: added branch naming convention (`feat/fix/chore/{number}-{slug}`), worktree usage rules (one per task, distinct port), atomic commit rules with issue references, Prisma migration sequencing guard, and end-of-task checklist (CONTEXT.md update → `check:design` → PR → worktree cleanup).
