@@ -9,7 +9,6 @@ import { prisma } from "@/lib/prisma";
 export const SETTING_KEYS = {
   pexelsApiKey: "pexels_api_key",
   geminiApiKey: "gemini_api_key",
-  scraperApiKey: "scraperapi_key",
   seasonCheckFrequency: "season_check_frequency",
   seasonLastChecked: "season_last_checked",
 } as const;
@@ -63,20 +62,6 @@ export async function getGeminiKey(): Promise<string | null> {
 /** Whether a Gemini key is configured (DB or env), without exposing its value. */
 export async function geminiConfigured(): Promise<boolean> {
   return (await getGeminiKey()) !== null;
-}
-
-/**
- * The effective ScraperAPI key: DB setting over the SCRAPERAPI_KEY env var.
- * Server-only — used to fetch recipe pages that block direct crawling (403).
- */
-export async function getScraperApiKey(): Promise<string | null> {
-  const stored = await getSetting(SETTING_KEYS.scraperApiKey);
-  return stored?.trim() || process.env.SCRAPERAPI_KEY?.trim() || null;
-}
-
-/** Whether a ScraperAPI key is configured (DB or env), without exposing it. */
-export async function scraperApiConfigured(): Promise<boolean> {
-  return (await getScraperApiKey()) !== null;
 }
 
 /** Current seasonal-check frequency (defaults to "Mensuelle"). */

@@ -13,15 +13,13 @@ import {
   type GeminiImage,
   type GeminiRecipe,
 } from "@/lib/gemini";
-import { geminiConfigured, getScraperApiKey, scraperApiConfigured } from "@/lib/settings";
+import { geminiConfigured } from "@/lib/settings";
 
 export type ExtractResult =
   | { ok: true; values: RecipeFormValues }
   | { ok: false; error: string };
 
 const FETCH_TIMEOUT_MS = 12_000;
-const SCRAPER_ENDPOINT = "https://api.scraperapi.com/";
-const SCRAPER_TIMEOUT_MS = 40_000; // ScraperAPI proxies the request → allow more time
 
 /** Direct page fetch with a browser-like UA; returns null on network/timeout error. */
 async function directFetch(url: string): Promise<Response | null> {
@@ -39,39 +37,10 @@ async function directFetch(url: string): Promise<Response | null> {
   }
 }
 
-/**
- * Fetches a recipe page's HTML. Tries a direct fetch first; only when the site
- * blocks it (403/429/503 or a network failure) AND a ScraperAPI key is
- * configured does it retry through ScraperAPI (proxy/anti-bot bypass). Never
- * uses ScraperAPI systematically — it stays a fallback to save credits.
- */
 async function fetchPageHtml(url: string): Promise<{ ok: true; html: string } | { ok: false; error: string }> {
   const res = await directFetch(url);
   if (res?.ok) return { ok: true, html: await res.text() };
-
-  const blocked = !res || res.status === 403 || res.status === 429 || res.status === 503;
-  if (blocked && (await scraperApiConfigured())) {
-    const key = await getScraperApiKey();
-    // ScraperAPI params must precede `url` to avoid clashing with the target's query.
-    const proxied = `${SCRAPER_ENDPOINT}?api_key=${encodeURIComponent(key!)}&country_code=fr&url=${encodeURIComponent(url)}`;
-    try {
-      const sres = await fetch(proxied, { signal: AbortSignal.timeout(SCRAPER_TIMEOUT_MS) });
-      if (sres.ok) return { ok: true, html: await sres.text() };
-      return { ok: false, error: `Le service de contournement a répondu ${sres.status}.` };
-    } catch (e) {
-      const msg = e instanceof Error && e.name === "TimeoutError"
-        ? "Le contournement a mis trop de temps."
-        : "Échec du contournement (ScraperAPI).";
-      return { ok: false, error: msg };
-    }
-  }
-
-  if (res && res.status === 403) {
-    return {
-      ok: false,
-      error: "Ce site bloque l'extraction (403). Renseignez une clé ScraperAPI (Paramètres › Général) pour contourner.",
-    };
-  }
+  if (res && res.status === 403) return { ok: false, error: "Ce site bloque l'extraction (403). L'import web n'est pas disponible pour ce site." };
   if (res) return { ok: false, error: `La page a répondu ${res.status}. Vérifiez l'adresse.` };
   return { ok: false, error: "Impossible de récupérer la page." };
 }
@@ -209,6 +178,132 @@ function parseYield(y: unknown): string {
   return m ? m[0] : "";
 }
 
+/**
+ * Extracts a JSON object from a JS assignment like `Marker = {...};` in raw HTML.
+ * Properly handles string literals so braces inside strings don't confuse the depth counter.
+ */
+function extractJsonAfterMarker(src: string, marker: string): unknown | null {
+  const idx = src.indexOf(marker);
+  if (idx < 0) return null;
+  const start = src.indexOf("{", idx + marker.length);
+  if (start < 0) return null;
+  let depth = 0, inStr = false, i = start;
+  while (i < src.length) {
+    const ch = src[i];
+    if (inStr) {
+      if (ch === "\\") i++; // skip escaped char
+      else if (ch === '"') inStr = false;
+    } else {
+      if (ch === '"') inStr = true;
+      else if (ch === "{") depth++;
+      else if (ch === "}") { depth--; if (depth === 0) break; }
+    }
+    i++;
+  }
+  try { return JSON.parse(src.slice(start, i + 1)); } catch { return null; }
+}
+
+/**
+ * Marmiton-specific: extracts recipe from `Mrtn.recipesData = { recipes: [...] }`.
+ * Returns a schema.org-compatible node so it flows through the existing mapRecipeNode().
+ */
+function parseMrtnRecipe(html: string): Record<string, unknown> | null {
+  const data = extractJsonAfterMarker(html, "Mrtn.recipesData =") as Record<string, unknown> | null;
+  const recipes = data?.recipes as Record<string, unknown>[] | undefined;
+  const r = recipes?.[0];
+  if (!r) return null;
+
+  // Normalize ingredients to schema.org recipeIngredient string array
+  const rawIngs = r.ingredients as unknown[] | undefined;
+  const recipeIngredient: string[] = Array.isArray(rawIngs)
+    ? rawIngs.flatMap((ing) => {
+        if (typeof ing === "string") return [ing];
+        if (ing && typeof ing === "object") {
+          const o = ing as Record<string, unknown>;
+          const qty = String(o.quantity ?? o.qt ?? "").trim();
+          const unit = String(o.unit ?? o.unit_label ?? "").trim();
+          const name = String(o.name ?? o.ingredient_label ?? o.ingredient ?? "").trim();
+          if (!name) return [];
+          return [[qty, unit, name].filter(Boolean).join(" ")];
+        }
+        return [];
+      })
+    : [];
+
+  // Normalize steps to string array
+  const rawSteps = r.steps as unknown[] | undefined;
+  const recipeInstructions: string[] = Array.isArray(rawSteps)
+    ? rawSteps.flatMap((s) => {
+        if (typeof s === "string") return s ? [s] : [];
+        if (s && typeof s === "object") {
+          const o = s as Record<string, unknown>;
+          const text = String(o.text ?? o.description ?? o.step ?? "").trim();
+          return text ? [text] : [];
+        }
+        return [];
+      })
+    : [];
+
+  return {
+    "@type": "Recipe",
+    name: r.name,
+    description: r.description ?? "",
+    recipeYield: r.nb_pers ?? r.servings ?? "",
+    prepTime: r.preparation_time ? `PT${r.preparation_time}M` : undefined,
+    cookTime: r.cooking_time ? `PT${r.cooking_time}M` : undefined,
+    totalTime: r.total_time ? `PT${r.total_time}M` : undefined,
+    image: r.picture_url ?? r.image_url ?? undefined,
+    recipeIngredient,
+    recipeInstructions: recipeInstructions.join("\n"),
+  };
+}
+
+/**
+ * Microdata fallback: extracts schema.org/Recipe from HTML itemprop attributes.
+ * Handles sites like Marmiton that embed structured data in HTML rather than JSON-LD.
+ */
+function parseMicrodataRecipe(html: string): Record<string, unknown> | null {
+  if (!/itemtype=["'][^"']*schema\.org\/Recipe/i.test(html)) return null;
+
+  const getFirst = (prop: string): string => {
+    // Try content="..." attribute first (used by <meta itemprop="X" content="...">)
+    const byContent =
+      html.match(new RegExp(`itemprop=["']${prop}["'][^>]*content=["']([^"']*)["']`, "i")) ??
+      html.match(new RegExp(`content=["']([^"']*)["'][^>]*itemprop=["']${prop}["']`, "i"));
+    if (byContent) return byContent[1];
+    // Fall back to element text
+    const byText = html.match(new RegExp(`itemprop=["']${prop}["'][^>]*>([^<]*)`, "i"));
+    return strip(byText?.[1] ?? "");
+  };
+
+  const getAll = (prop: string): string[] => {
+    const out: string[] = [];
+    const re = new RegExp(`itemprop=["']${prop}["'][^>]*>([^<]*)`, "gi");
+    for (const m of html.matchAll(re)) {
+      const v = strip(m[1]);
+      if (v) out.push(v);
+    }
+    return out;
+  };
+
+  const name = getFirst("name");
+  const ingredients = getAll("recipeIngredient");
+  if (!name && !ingredients.length) return null;
+
+  return {
+    "@type": "Recipe",
+    name,
+    description: getFirst("description"),
+    recipeYield: getFirst("recipeYield"),
+    prepTime: getFirst("prepTime"),
+    cookTime: getFirst("cookTime"),
+    image: getFirst("image"),
+    recipeIngredient: ingredients,
+    recipeInstructions: getAll("recipeInstructions").join("\n"),
+    author: getFirst("author"),
+  };
+}
+
 /** Walks JSON-LD (handles @graph + arrays) to find the first Recipe node. */
 function findRecipeNode(json: unknown): Record<string, unknown> | null {
   const nodes: unknown[] = [];
@@ -268,7 +363,7 @@ export async function extractRecipeFromUrl(rawUrl: string, useAi = true): Promis
   if (!page.ok) return { ok: false, error: page.error };
   const html = page.html;
 
-  // Locate the first schema.org/Recipe JSON-LD node, if any.
+  // 1a. JSON-LD structured data (preferred).
   const blocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   let node: Record<string, unknown> | null = null;
   for (const b of blocks) {
@@ -282,6 +377,10 @@ export async function extractRecipeFromUrl(rawUrl: string, useAi = true): Promis
       // ignore malformed JSON-LD block
     }
   }
+  // 1b. Microdata fallback (itemprop — e.g. older sites).
+  if (!node) node = parseMicrodataRecipe(html);
+  // 1c. Marmiton-specific JS blob (Mrtn.recipesData).
+  if (!node) node = parseMrtnRecipe(html);
 
   // 1. Gemini-assisted parsing when enabled by the user AND a key is configured
   //    (cleaner field split). Feed the JSON-LD recipe node if present, else the
@@ -292,6 +391,8 @@ export async function extractRecipeFromUrl(rawUrl: string, useAi = true): Promis
       const g = await extractRecipeFromText(input);
       if (g.ok) {
         const values = geminiRecipeToValues(g.recipe, url);
+        // Preserve image from pre-parsed node (Gemini doesn't return image URLs)
+        if (!values.imageUrl && node) values.imageUrl = parseImage(node.image);
         if (values.title || values.ingredients.length || values.steps.length) {
           return { ok: true, values };
         }

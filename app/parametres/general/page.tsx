@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
-import { pexelsConfigured, geminiConfigured, scraperApiConfigured } from "@/lib/settings";
+import { pexelsConfigured, geminiConfigured } from "@/lib/settings";
 import { ApiKeyForm } from "../_general-form";
-import { savePexelsKey, saveGeminiKey, saveScraperApiKey } from "../settings-actions";
+import { savePexelsKey, saveGeminiKey } from "../settings-actions";
 
 export const metadata: Metadata = { title: "Général" };
 export const dynamic = "force-dynamic";
 
 export default async function GeneralPage() {
-  const [pexels, gemini, scraper] = await Promise.all([
+  const [pexels, gemini] = await Promise.all([
     pexelsConfigured(),
     geminiConfigured(),
-    scraperApiConfigured(),
   ]);
 
   return (
@@ -38,14 +37,6 @@ export default async function GeneralPage() {
           description="Scan de recettes par photo (lecture et structuration par l’IA)."
           placeholder="Collez votre clé Gemini"
           save={saveGeminiKey}
-        />
-        <ApiKeyForm
-          configured={scraper}
-          icon="globe"
-          title="Clé API ScraperAPI"
-          description="Contourne les sites qui bloquent l’import web (403). Utilisée en repli uniquement."
-          placeholder="Collez votre clé ScraperAPI"
-          save={saveScraperApiKey}
         />
       </div>
     </section>

@@ -13,11 +13,78 @@ import {
   recipeStepsCreate,
   recipeTagsCreate,
   recipeUtensilsCreate,
+  resolveSectionId,
   slugify,
+  type RecipeInput,
 } from "@/lib/recipes";
 
 // State returned to the form via useActionState (error display).
 export type FormState = { error: string | null };
+
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/**
+ * Creates ingredient + step sections inside a transaction and returns their DB
+ * IDs indexed by position (matching the form's ingSectionTitles / stepSectionTitles).
+ */
+async function createSections(
+  tx: TxClient,
+  recipeId: string,
+  input: RecipeInput,
+): Promise<{ ingSectionIds: string[]; stepSectionIds: string[] }> {
+  const ingSections = await Promise.all(
+    input.ingSectionTitles.map((title, position) =>
+      tx.ingredientSection.create({ data: { recipeId, title, position } }),
+    ),
+  );
+  const stepSections = await Promise.all(
+    input.stepSectionTitles.map((title, position) =>
+      tx.stepSection.create({ data: { recipeId, title, position } }),
+    ),
+  );
+  return {
+    ingSectionIds: ingSections.map((s) => s.id),
+    stepSectionIds: stepSections.map((s) => s.id),
+  };
+}
+
+/** Creates RecipeIngredient rows with sectionId resolved from form indices. */
+async function createIngredients(
+  tx: TxClient,
+  recipeId: string,
+  input: RecipeInput,
+  ingSectionIds: string[],
+) {
+  const rows = recipeIngredientsCreate(input);
+  for (let i = 0; i < rows.length; i++) {
+    await tx.recipeIngredient.create({
+      data: {
+        ...rows[i],
+        recipeId,
+        sectionId: resolveSectionId(input.ingredients[i]?.sectionIdx, ingSectionIds),
+      },
+    });
+  }
+}
+
+/** Creates Step rows with sectionId resolved from form indices. */
+async function createSteps(
+  tx: TxClient,
+  recipeId: string,
+  input: RecipeInput,
+  stepSectionIds: string[],
+) {
+  const rows = recipeStepsCreate(input);
+  for (let i = 0; i < rows.length; i++) {
+    await tx.step.create({
+      data: {
+        ...rows[i],
+        recipeId,
+        sectionId: resolveSectionId(input.stepSectionIdxs[i], stepSectionIds),
+      },
+    });
+  }
+}
 
 /** Returns a unique slug based on `base`, suffixing -2, -3… on collision. */
 async function uniqueSlug(base: string, excludeId?: string): Promise<string> {
@@ -90,19 +157,24 @@ export async function createRecipeAction(
   }
 
   const slug = await uniqueSlug(slugify(result.data.title));
+  const input = result.data;
 
-  const recipe = await prisma.recipe.create({
-    data: {
-      slug,
-      ...recipeScalars(result.data),
-      ...image,
-      recipeIngredients: { create: recipeIngredientsCreate(result.data) },
-      recipeUtensils: { create: recipeUtensilsCreate(result.data) },
-      recipeTags: { create: recipeTagsCreate(result.data) },
-      recipeCategories: { create: recipeCategoriesCreate(result.data) },
-      recipeSteps: { create: recipeStepsCreate(result.data) },
-      recipeSources: { create: recipeSourcesCreate(result.data) },
-    },
+  const recipe = await prisma.$transaction(async (tx) => {
+    const r = await tx.recipe.create({
+      data: {
+        slug,
+        ...recipeScalars(input),
+        ...image,
+        recipeUtensils: { create: recipeUtensilsCreate(input) },
+        recipeTags: { create: recipeTagsCreate(input) },
+        recipeCategories: { create: recipeCategoriesCreate(input) },
+        recipeSources: { create: recipeSourcesCreate(input) },
+      },
+    });
+    const { ingSectionIds, stepSectionIds } = await createSections(tx, r.id, input);
+    await createIngredients(tx, r.id, input, ingSectionIds);
+    await createSteps(tx, r.id, input, stepSectionIds);
+    return r;
   });
 
   revalidatePath("/recettes");
@@ -134,27 +206,30 @@ export async function updateRecipeAction(
     return { error: e instanceof Error ? e.message : "Échec de l'upload de la photo" };
   }
 
-  await prisma.recipe.update({
-    where: { id },
-    data: {
-      ...recipeScalars(result.data),
-      ...image,
-      recipeIngredients: {
-        deleteMany: {},
-        create: recipeIngredientsCreate(result.data),
+  const input = result.data;
+
+  await prisma.$transaction(async (tx) => {
+    // Delete sections first (SET NULL cascades to ingredients/steps via FK).
+    await tx.ingredientSection.deleteMany({ where: { recipeId: id } });
+    await tx.stepSection.deleteMany({ where: { recipeId: id } });
+
+    await tx.recipe.update({
+      where: { id },
+      data: {
+        ...recipeScalars(input),
+        ...image,
+        recipeIngredients: { deleteMany: {} },
+        recipeUtensils: { deleteMany: {}, create: recipeUtensilsCreate(input) },
+        recipeTags: { deleteMany: {}, create: recipeTagsCreate(input) },
+        recipeCategories: { deleteMany: {}, create: recipeCategoriesCreate(input) },
+        recipeSteps: { deleteMany: {} },
+        recipeSources: { deleteMany: {}, create: recipeSourcesCreate(input) },
       },
-      recipeUtensils: {
-        deleteMany: {},
-        create: recipeUtensilsCreate(result.data),
-      },
-      recipeTags: { deleteMany: {}, create: recipeTagsCreate(result.data) },
-      recipeCategories: {
-        deleteMany: {},
-        create: recipeCategoriesCreate(result.data),
-      },
-      recipeSteps: { deleteMany: {}, create: recipeStepsCreate(result.data) },
-      recipeSources: { deleteMany: {}, create: recipeSourcesCreate(result.data) },
-    },
+    });
+
+    const { ingSectionIds, stepSectionIds } = await createSections(tx, id, input);
+    await createIngredients(tx, id, input, ingSectionIds);
+    await createSteps(tx, id, input, stepSectionIds);
   });
 
   revalidatePath("/recettes");

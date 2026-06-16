@@ -4,12 +4,20 @@ All notable changes to the project, by release. Versions follow the `vMAJOR.MINO
 
 ## [v0.3.6] — 2026-06-16
 
-- **Web import — ScraperAPI 403 bypass**: when the direct fetch is blocked
-  (403/429/503 or a network failure) and a **ScraperAPI** key is configured, the
-  crawl retries through ScraperAPI (e.g. Marmiton). It is a **fallback only** —
-  never used systematically (saves credits). Without a key, a blocked page now
-  returns a clear message pointing to Paramètres › Général. New `SCRAPERAPI_KEY`
-  server secret (env or Setting, like Pexels/Gemini) + a key field in Général.
+- **Web import — Marmiton parser**: Marmiton serves neither JSON-LD nor microdata
+  but embeds recipe data in a `Mrtn.recipesData` JS blob. A new `parseMrtnRecipe`
+  extractor reads that blob (title, image, servings, ingredients name+unit) with a
+  proper string-literal-aware bracket counter for safe JSON extraction.
+- **Web import — microdata fallback**: `parseMicrodataRecipe` parses `itemprop`
+  attributes as a second-tier fallback between JSON-LD and the Mrtn blob.
+- **Web import — image preserved with AI**: when Gemini structures the result, the
+  image URL from the pre-parsed node is now copied over (Gemini doesn't return URLs).
+- **ScraperAPI removed**: dropped the paid ScraperAPI integration entirely (key
+  setting, UI toggle, fetch fallback). The product stays fully free.
+- **Recipe sections**: `IngredientSection` and `StepSection` models added to the
+  schema — named groups for ingredients and steps within a recipe (e.g. "Tangzhong",
+  "Pâte à pain"). Sections use `SetNull` on delete so ingredients/steps are never
+  lost when a section is removed.
 
 ## [v0.3.5] — 2026-06-16
 

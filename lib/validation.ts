@@ -99,6 +99,11 @@ const ingredientSchema = z.object({
   quantity: floatField("La quantité", 1_000_000),
   unit: trimmedOrNull,
   isPrimary: boolField,
+  // Index into ingSectionTitles (null / "" = no section).
+  sectionIdx: z.preprocess(
+    (v) => v === "" || v === null || v === undefined ? null : parseInt(String(v), 10),
+    z.number().int().nullable(),
+  ),
 });
 
 const utensilSchema = z.object({
@@ -114,6 +119,15 @@ const ingredients = z.preprocess(
 const utensils = z.preprocess(
   (v) => (Array.isArray(v) ? v.filter((r) => nameOf(r).length > 0) : []),
   z.array(utensilSchema),
+);
+
+/** Parallel array of section indices for steps (null / "" = no section). */
+const stepSectionIdxs = z.preprocess(
+  (v) =>
+    Array.isArray(v)
+      ? v.map((s) => (s === "" || s === null || s === undefined ? null : parseInt(String(s), 10)))
+      : [],
+  z.array(z.number().int().nullable()),
 );
 
 export const recipeInputSchema = z.object({
@@ -145,11 +159,17 @@ export const recipeInputSchema = z.object({
     z.enum(["AUTO", "MANUAL", "ALWAYS"]).default("AUTO"),
   ),
   seasonMonths: monthList,
+  // Section titles in order (position = index in array).
+  ingSectionTitles: stringList,
+  stepSectionTitles: stringList,
+  // Per-step section indices (parallel to `steps`).
+  stepSectionIdxs,
 });
 
 export type RecipeInput = z.infer<typeof recipeInputSchema>;
 export type IngredientInput = RecipeInput["ingredients"][number];
 export type UtensilInput = RecipeInput["utensils"][number];
+export type SectionInput = { title: string };
 
 export type ValidationResult =
   | { ok: true; data: RecipeInput }

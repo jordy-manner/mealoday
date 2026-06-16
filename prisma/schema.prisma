@@ -67,6 +67,9 @@ model Recipe {
   recipeSteps       Step[]
   // Where the recipe comes from (URLs / free-text attributions). Own table.
   recipeSources     RecipeSource[]
+  // Named section groups (independent for ingredients vs steps).
+  ingredientSections IngredientSection[]
+  stepSections       StepSection[]
 }
 
 // How a recipe source is interpreted in the UI (link vs plain text).
@@ -91,13 +94,17 @@ model RecipeSource {
 
 // A single ordered preparation step of a recipe (Markdown content).
 model Step {
-  id       String @id @default(cuid())
-  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  id       String       @id @default(cuid())
+  recipe   Recipe       @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   recipeId String
   content  String
-  order    Int    @default(0) // display order within the recipe
+  order    Int          @default(0) // display order within the recipe
+  // Optional section grouping; SET NULL when the section is deleted.
+  section   StepSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId String?
 
   @@index([recipeId])
+  @@index([sectionId])
 }
 
 // Seasonal-produce category. An ingredient with a category is shown on /saisons.
@@ -185,6 +192,32 @@ model UnitType {
   units Unit[]
 }
 
+// Named group of ingredients within a recipe (e.g. "Tangzhong", "Pâte à pain").
+// Deleting a section NULLs its ingredients (they become ungrouped).
+model IngredientSection {
+  id          String             @id @default(cuid())
+  recipe      Recipe             @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId    String
+  title       String
+  position    Int                @default(0)
+  ingredients RecipeIngredient[]
+
+  @@index([recipeId])
+}
+
+// Named group of steps within a recipe (independent from ingredient sections).
+// Deleting a section NULLs its steps (they become ungrouped).
+model StepSection {
+  id       String @id @default(cuid())
+  recipe   Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  recipeId String
+  title    String
+  position Int    @default(0)
+  steps    Step[]
+
+  @@index([recipeId])
+}
+
 // Explicit Recipe <-> Ingredient join, carrying the quantity and the unit.
 // Table "RecipeIngredient" (columns recipeId / ingredientId, composite PK).
 model RecipeIngredient {
@@ -198,10 +231,14 @@ model RecipeIngredient {
   position     Int        @default(0) // display order within the recipe
   // Marks a "main" ingredient, used for AUTO seasonality detection.
   isPrimary    Boolean    @default(false)
+  // Optional section grouping; SET NULL when the section is deleted.
+  section   IngredientSection? @relation(fields: [sectionId], references: [id], onDelete: SetNull)
+  sectionId String?
 
   @@id([recipeId, ingredientId])
   @@index([ingredientId])
   @@index([unitId])
+  @@index([sectionId])
 }
 
 // Catalog of reusable utensils (e.g. "cuillère en bois", "moule à manqué

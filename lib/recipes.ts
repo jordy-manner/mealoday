@@ -40,18 +40,21 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
   const ingredientQuantities = formData.getAll("ingredientQuantity");
   const ingredientUnits = formData.getAll("ingredientUnit");
   const ingredientPrimary = formData.getAll("ingredientIsPrimary");
-  const ingredients = ingredientNames.map((name, i) => ({
-    name,
-    quantity: ingredientQuantities[i] ?? "",
-    unit: ingredientUnits[i] ?? "",
-    isPrimary: ingredientPrimary[i] ?? "false",
-  }));
 
   const utensilNames = formData.getAll("utensilName");
   const utensilQuantities = formData.getAll("utensilQuantity");
   const utensils = utensilNames.map((name, i) => ({
     name,
     quantity: utensilQuantities[i] ?? "",
+  }));
+
+  const ingredientSectionIdxs = formData.getAll("ingredientSectionIdx");
+  const ingredientsWithSec = ingredientNames.map((name, i) => ({
+    name,
+    quantity: ingredientQuantities[i] ?? "",
+    unit: ingredientUnits[i] ?? "",
+    isPrimary: ingredientPrimary[i] ?? "false",
+    sectionIdx: ingredientSectionIdxs[i] ?? "",
   }));
 
   return validateRecipeInput({
@@ -69,7 +72,7 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
     protein: formData.get("protein"),
     carbs: formData.get("carbs"),
     fat: formData.get("fat"),
-    ingredients,
+    ingredients: ingredientsWithSec,
     utensils,
     steps: formData.getAll("step"), // one textarea per step (StepEditor)
     tags: formData.getAll("tag"), // one hidden input per tag (TagsCombobox)
@@ -77,6 +80,9 @@ export function recipeInputFromFormData(formData: FormData): ValidationResult {
     sources: formData.getAll("source"), // one hidden input per source
     seasonMode: formData.get("seasonMode"),
     seasonMonths: formData.getAll("seasonMonth"), // one hidden input per month
+    ingSectionTitles: formData.getAll("ingSectionTitle"),
+    stepSectionTitles: formData.getAll("stepSectionTitle"),
+    stepSectionIdxs: formData.getAll("stepSectionIdx"),
   });
 }
 
@@ -104,9 +110,21 @@ export function recipeScalars(input: RecipeInput) {
   };
 }
 
-/** Step rows to create (content + order). */
+/** Step rows to create (content + order), without sectionId (set in transaction). */
 export function recipeStepsCreate(input: RecipeInput) {
   return input.steps.map((content, order) => ({ content, order }));
+}
+
+/**
+ * Resolves a section index to a DB section ID. Returns null when the index is
+ * out of range or when the sectionIds array is empty (no sections).
+ */
+export function resolveSectionId(
+  idx: number | null | undefined,
+  sectionIds: string[],
+): string | null {
+  if (idx == null || idx < 0 || idx >= sectionIds.length) return null;
+  return sectionIds[idx] ?? null;
 }
 
 /** True when a source value is a web link (→ kind "url", else "text"). */
@@ -188,6 +206,7 @@ type RawRecipeIngredient = {
   unit: { name: string } | null;
   position: number;
   isPrimary: boolean;
+  sectionId: string | null;
 };
 type RawRecipeUtensil = {
   utensilId: string;
@@ -195,8 +214,10 @@ type RawRecipeUtensil = {
   quantity: number | null;
   position: number;
 };
-type RawStep = { content: string; order: number };
+type RawStep = { content: string; order: number; sectionId: string | null };
 type RawRecipeSource = { value: string; kind: "url" | "text"; position: number };
+export type RawIngredientSection = { id: string; title: string; position: number };
+export type RawStepSection = { id: string; title: string; position: number };
 
 /**
  * Flattens the relations into ergonomic shapes (`tags`, `categories`,
@@ -211,6 +232,8 @@ export function flattenRecipe<
     recipeUtensils: RawRecipeUtensil[];
     recipeSteps: RawStep[];
     recipeSources?: RawRecipeSource[];
+    ingredientSections?: RawIngredientSection[];
+    stepSections?: RawStepSection[];
   },
 >(recipe: T) {
   const {
@@ -220,6 +243,8 @@ export function flattenRecipe<
     recipeUtensils,
     recipeSteps,
     recipeSources,
+    ingredientSections,
+    stepSections,
     ...rest
   } = recipe;
   return {
@@ -227,6 +252,8 @@ export function flattenRecipe<
     tags: recipeTags.map((rt) => rt.tag),
     categories: recipeCategories.map((rc) => rc.category),
     sources: (recipeSources ?? []).map((s) => ({ value: s.value, kind: s.kind })),
+    ingredientSections: (ingredientSections ?? []).map((s) => ({ id: s.id, title: s.title })),
+    stepSections: (stepSections ?? []).map((s) => ({ id: s.id, title: s.title })),
     ingredients: recipeIngredients.map((ri) => ({
       id: ri.ingredientId,
       name: ri.ingredient.name,
@@ -234,6 +261,7 @@ export function flattenRecipe<
       unit: ri.unit?.name ?? null,
       position: ri.position,
       isPrimary: ri.isPrimary,
+      sectionId: ri.sectionId,
     })),
     utensils: recipeUtensils.map((ru) => ({
       id: ru.utensilId,
@@ -241,6 +269,6 @@ export function flattenRecipe<
       quantity: ru.quantity,
       position: ru.position,
     })),
-    steps: recipeSteps.map((s) => s.content),
+    steps: recipeSteps.map((s) => ({ content: s.content, sectionId: s.sectionId })),
   };
 }
