@@ -2,6 +2,20 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.4] — 2026-06-16
+
+- **Web import — Gemini-assisted parsing**: when a Gemini key is configured,
+  `extractRecipeFromUrl` now structures the fetched page with Gemini
+  (`extractRecipeFromText`) for a much cleaner field distribution — feeding the
+  JSON-LD recipe node when present, else the page's cleaned visible text (capped).
+  Without a key (or on Gemini failure) it falls back to the built-in
+  schema.org/Recipe parser, so the crawler keeps working unchanged. The shared
+  Gemini→form mapper is reused by both the web and photo-scan paths. The crawl
+  view gains an **AI on/off switch** (Gemini), on by default when a key exists and
+  **disabled without a key** — turning it off forces the built-in parser.
+- Fix: the creation form showed two back buttons ("Retour" + "Retour aux choix");
+  the page-level "Retour" now lives in the chooser only, so each view has one.
+
 ## [v0.3.3] — 2026-06-16
 
 - **Recipe photo scan — switch from Tesseract to Gemini**: the Tesseract OCR

@@ -82,9 +82,11 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   client): **Importer depuis le web** / **Scanner une photo** (OCR) / **Saisie
   manuelle**; the method is mirrored to `?method=`, each sub-step + the manual
   form have a "Retour aux choix" button. **Web import** is live (paste a URL →
-  `extractRecipeFromUrl` server action fetches the page server-side and parses
-  **schema.org/Recipe** — JSON-LD preferred, incl. `@graph`, with a title
-  fallback — prefilling title/description/ingredients/steps/times/servings/image,
+  `extractRecipeFromUrl` server action fetches the page server-side; when a Gemini
+  key is configured it sends the content to Gemini for clean structuring (the
+  JSON-LD recipe node if present, else the cleaned page text), and otherwise falls
+  back to a built-in **schema.org/Recipe** parser (JSON-LD incl. `@graph`, then a
+  title fallback). Prefills title/description/ingredients/steps/times/servings/image,
   the URL added as the first source; fields stay editable). **Photo scan** uses
   **Gemini** (vision): import/shoot one or more photos → a server action sends them
   to the Gemini API which returns a **structured** recipe (title/ingredients/steps/
@@ -291,8 +293,9 @@ rendering, which these pages already are).
 - `lib/recipe-parse.ts` — client-safe ingredient-line parser (quantity/unit/name),
   used by the web-crawl import path.
 - `lib/gemini.ts` — server-only Gemini (Generative Language) REST client:
-  `extractRecipeFromImages` (inline images → structured recipe JSON). Key + model
-  from `lib/settings` (`getGeminiKey`, `GEMINI_MODEL`).
+  `extractRecipeFromImages` (photos) + `extractRecipeFromText` (web page content),
+  both → structured recipe JSON. Key + model from `lib/settings` (`getGeminiKey`,
+  `GEMINI_MODEL`).
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),

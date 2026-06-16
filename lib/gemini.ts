@@ -55,23 +55,25 @@ const RESPONSE_SCHEMA = {
   propertyOrdering: ["title", "description", "servings", "prepTime", "cookTime", "restTime", "ingredients", "steps"],
 } as const;
 
-const PROMPT =
+const PROMPT_IMAGE =
   "Tu es un assistant culinaire. Lis la ou les photo(s) de recette (imprimée ou " +
   "manuscrite, en français) et renvoie la recette structurée selon le schéma. " +
   "Les temps sont en minutes (entiers). Sépare bien la quantité, l'unité et le " +
   "nom de chaque ingrédient. N'invente rien : laisse vide ce qui est absent. " +
   "S'il y a plusieurs pages, recompose une seule recette dans l'ordre.";
 
-export async function extractRecipeFromImages(images: GeminiImage[]): Promise<GeminiResult> {
-  if (!images.length) return { ok: false, error: "Aucune image à analyser." };
+const PROMPT_TEXT =
+  "Tu es un assistant culinaire. À partir du contenu d'une page web de recette " +
+  "ci-dessous (texte ou données structurées), renvoie la recette selon le schéma. " +
+  "Les temps sont en minutes (entiers). Sépare bien la quantité, l'unité et le nom " +
+  "de chaque ingrédient. Ignore le bruit (navigation, pubs, commentaires). " +
+  "N'invente rien : laisse vide ce qui est absent.\n\nCONTENU :\n";
 
+/** Core call: POST the given content parts with the structured-recipe schema. */
+async function generateRecipe(parts: unknown[]): Promise<GeminiResult> {
   const key = await getGeminiKey();
   if (!key) return { ok: false, error: "Aucune clé API Gemini configurée." };
 
-  const parts = [
-    { text: PROMPT },
-    ...images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.base64 } })),
-  ];
   const body = {
     contents: [{ parts }],
     generationConfig: { responseMimeType: "application/json", responseSchema: RESPONSE_SCHEMA },
@@ -106,11 +108,26 @@ export async function extractRecipeFromImages(images: GeminiImage[]): Promise<Ge
 
   const text = (json as { candidates?: { content?: { parts?: { text?: string }[] } }[] })
     ?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) return { ok: false, error: "Aucune recette détectée sur la photo." };
+  if (!text) return { ok: false, error: "Aucune recette détectée." };
 
   try {
     return { ok: true, recipe: JSON.parse(text) as GeminiRecipe };
   } catch {
     return { ok: false, error: "Recette illisible dans la réponse." };
   }
+}
+
+/** Vision: extract a recipe from one or more photos (image never leaves... goes to Google). */
+export async function extractRecipeFromImages(images: GeminiImage[]): Promise<GeminiResult> {
+  if (!images.length) return { ok: false, error: "Aucune image à analyser." };
+  return generateRecipe([
+    { text: PROMPT_IMAGE },
+    ...images.map((img) => ({ inline_data: { mime_type: img.mimeType, data: img.base64 } })),
+  ]);
+}
+
+/** Text: structure a recipe from a web page's content (cleaned text or JSON-LD). */
+export async function extractRecipeFromText(content: string): Promise<GeminiResult> {
+  if (!content.trim()) return { ok: false, error: "Contenu vide." };
+  return generateRecipe([{ text: PROMPT_TEXT + content }]);
 }

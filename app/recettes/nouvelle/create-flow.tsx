@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRef, useState, useTransition } from "react";
 import { Icon, type IconName } from "../../components/icons";
 import { RecipeForm, type IngredientOption, type RecipeFormValues, type UnitOption } from "../recipe-form";
@@ -241,23 +242,27 @@ function BackToChoices({ onClick }: { onClick: () => void }) {
   );
 }
 
-/** Web-import sub-step: paste a URL → server-side extraction → prefilled form. */
+/** Web-import sub-step: paste a URL → server-side extraction → prefilled form.
+ *  An AI switch (Gemini) gives a cleaner field split; disabled without a key. */
 function CrawlStep({
   onBack,
   onExtracted,
+  aiAvailable,
 }: {
   onBack: () => void;
   onExtracted: (values: RecipeFormValues) => void;
+  aiAvailable: boolean;
 }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [useAi, setUseAi] = useState(aiAvailable);
   const [pending, start] = useTransition();
 
   const run = () => {
     if (!url.trim() || pending) return;
     setError(null);
     start(async () => {
-      const res = await extractRecipeFromUrl(url);
+      const res = await extractRecipeFromUrl(url, useAi && aiAvailable);
       if (res.ok) onExtracted(res.values);
       else setError(res.error);
     });
@@ -285,6 +290,37 @@ function CrawlStep({
           className="min-w-0 flex-1 bg-transparent text-ink outline-none placeholder:text-ink-faint"
         />
       </div>
+      {/* AI switch: structure with Gemini (cleaner). Disabled without a key. */}
+      <div className="mt-4 flex items-start justify-between gap-3 rounded-input border border-line bg-surface px-3.5 py-3">
+        <div className="min-w-0">
+          <span className="block text-[14px] font-semibold text-ink">Structurer avec l&apos;IA (Gemini)</span>
+          <span className="block text-[12.5px] text-ink-soft">
+            {aiAvailable
+              ? "Meilleure répartition des champs. L'extrait de page est envoyé à Google."
+              : "Clé API Gemini requise (Paramètres › Général)."}
+          </span>
+        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={useAi && aiAvailable}
+          aria-label="Structurer avec l'IA"
+          disabled={!aiAvailable}
+          onClick={() => setUseAi((v) => !v)}
+          className={
+            "relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 " +
+            (useAi && aiAvailable ? "bg-accent" : "bg-surface-muted")
+          }
+        >
+          <span
+            className={
+              "inline-block h-5 w-5 transform rounded-full bg-surface shadow-card transition " +
+              (useAi && aiAvailable ? "translate-x-[22px]" : "translate-x-0.5")
+            }
+          />
+        </button>
+      </div>
+
       {error && (
         <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-input bg-accent-soft px-3 py-1.5 text-[13px] font-semibold text-accent-ink">
           <Icon name="alert" size={14} /> {error}
@@ -343,7 +379,7 @@ export function CreateFlow({
 
   if (method === "web") {
     if (!webValues) {
-      return <CrawlStep onBack={() => select("choose")} onExtracted={setWebValues} />;
+      return <CrawlStep onBack={() => select("choose")} onExtracted={setWebValues} aiAvailable={scanEnabled} />;
     }
     return (
       <>
@@ -377,6 +413,12 @@ export function CreateFlow({
 
   return (
     <div className="animate-fade-up">
+      <Link
+        href="/recettes"
+        className="mb-5 inline-flex items-center gap-2 text-[15px] font-semibold text-ink-soft transition hover:text-accent"
+      >
+        <Icon name="back" size={18} /> Retour
+      </Link>
       <p className="eyebrow">Nouvelle recette</p>
       <h1 className="mb-2 mt-1 font-display text-[clamp(26px,3.4vw,38px)] font-medium tracking-[-0.02em]">
         Comment ajouter votre recette ?

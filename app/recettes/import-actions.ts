@@ -7,13 +7,30 @@
 
 import type { RecipeFormValues } from "./recipe-form";
 import { parseIngredientLine } from "@/lib/recipe-parse";
-import { extractRecipeFromImages, type GeminiImage } from "@/lib/gemini";
+import {
+  extractRecipeFromImages,
+  extractRecipeFromText,
+  type GeminiImage,
+  type GeminiRecipe,
+} from "@/lib/gemini";
+import { geminiConfigured } from "@/lib/settings";
 
 export type ExtractResult =
   | { ok: true; values: RecipeFormValues }
   | { ok: false; error: string };
 
 const FETCH_TIMEOUT_MS = 12_000;
+// Max characters of cleaned page text sent to Gemini (keeps token cost bounded).
+const GEMINI_INPUT_MAX = 24_000;
+
+/** Strips a full HTML document to its visible text (drops scripts/styles/tags). */
+function cleanHtmlToText(html: string): string {
+  return strip(
+    html
+      .replace(/<(script|style|noscript|template|svg)[\s\S]*?<\/\1>/gi, " ")
+      .replace(/<head[\s\S]*?<\/head>/i, " "),
+  );
+}
 
 /** A blank form value set (server-side mirror of the form's EMPTY). */
 function emptyValues(): RecipeFormValues {
@@ -186,7 +203,7 @@ function mapRecipeNode(node: Record<string, unknown>, url: string): RecipeFormVa
   return values;
 }
 
-export async function extractRecipeFromUrl(rawUrl: string): Promise<ExtractResult> {
+export async function extractRecipeFromUrl(rawUrl: string, useAi = true): Promise<ExtractResult> {
   const url = rawUrl.trim();
   if (!/^https?:\/\/\S+$/i.test(url)) {
     return { ok: false, error: "Adresse invalide — collez une URL commençant par http(s)://." };
@@ -209,25 +226,46 @@ export async function extractRecipeFromUrl(rawUrl: string): Promise<ExtractResul
     return { ok: false, error: msg };
   }
 
-  // 1. JSON-LD (preferred).
+  // Locate the first schema.org/Recipe JSON-LD node, if any.
   const blocks = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
+  let node: Record<string, unknown> | null = null;
   for (const b of blocks) {
-    let json: unknown;
     try {
-      json = JSON.parse(b[1].trim());
+      const found = findRecipeNode(JSON.parse(b[1].trim()));
+      if (found) {
+        node = found;
+        break;
+      }
     } catch {
-      continue;
+      // ignore malformed JSON-LD block
     }
-    const node = findRecipeNode(json);
-    if (node) {
-      const values = mapRecipeNode(node, url);
-      if (values.title || values.ingredients.length || values.steps.length) {
-        return { ok: true, values };
+  }
+
+  // 1. Gemini-assisted parsing when enabled by the user AND a key is configured
+  //    (cleaner field split). Feed the JSON-LD recipe node if present, else the
+  //    cleaned page text.
+  if (useAi && (await geminiConfigured())) {
+    const input = node ? JSON.stringify(node) : cleanHtmlToText(html).slice(0, GEMINI_INPUT_MAX);
+    if (input.trim().length > 40) {
+      const g = await extractRecipeFromText(input);
+      if (g.ok) {
+        const values = geminiRecipeToValues(g.recipe, url);
+        if (values.title || values.ingredients.length || values.steps.length) {
+          return { ok: true, values };
+        }
       }
     }
   }
 
-  // 2. Minimal fallback: at least pre-fill the title (og:title / <title> / <h1>)
+  // 2. Fallback: structured JSON-LD parser (heuristic ingredient split).
+  if (node) {
+    const values = mapRecipeNode(node, url);
+    if (values.title || values.ingredients.length || values.steps.length) {
+      return { ok: true, values };
+    }
+  }
+
+  // 3. Minimal fallback: at least pre-fill the title (og:title / <title> / <h1>)
   //    so the user can finish by hand, with the source kept.
   const og = html.match(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i);
   const h1 = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
@@ -246,10 +284,31 @@ export async function extractRecipeFromUrl(rawUrl: string): Promise<ExtractResul
 const numStr = (n: number | null | undefined): string =>
   typeof n === "number" && Number.isFinite(n) ? String(n) : "";
 
+/** Maps a Gemini structured recipe onto the editable form values. */
+function geminiRecipeToValues(r: GeminiRecipe, source: string): RecipeFormValues {
+  const values = emptyValues();
+  values.title = (r.title ?? "").trim();
+  values.description = (r.description ?? "").trim();
+  values.servings = numStr(r.servings);
+  values.prepTime = numStr(r.prepTime);
+  values.cookTime = numStr(r.cookTime);
+  values.restTime = numStr(r.restTime);
+  values.ingredients = (r.ingredients ?? [])
+    .map((i) => ({
+      name: (i.name ?? "").trim(),
+      quantity: numStr(i.quantity),
+      unit: (i.unit ?? "").trim(),
+      isPrimary: false,
+    }))
+    .filter((i) => i.name);
+  values.steps = (r.steps ?? []).map((s) => s.trim()).filter(Boolean);
+  values.sources = [source];
+  return values;
+}
+
 /**
- * OCR-free photo scan: read the uploaded image(s), send them to Gemini
- * (server-side) and map the structured recipe back onto the editable form.
- * The source defaults to "Photo importée".
+ * Photo scan: read the uploaded image(s), send them to Gemini (server-side) and
+ * map the structured recipe back onto the editable form. Source = "Photo importée".
  */
 export async function extractRecipeFromImagesAction(formData: FormData): Promise<ExtractResult> {
   const files = formData.getAll("image").filter((f): f is File => f instanceof File && f.size > 0);
@@ -270,25 +329,7 @@ export async function extractRecipeFromImagesAction(formData: FormData): Promise
   const res = await extractRecipeFromImages(images);
   if (!res.ok) return res;
 
-  const r = res.recipe;
-  const values = emptyValues();
-  values.title = (r.title ?? "").trim();
-  values.description = (r.description ?? "").trim();
-  values.servings = numStr(r.servings);
-  values.prepTime = numStr(r.prepTime);
-  values.cookTime = numStr(r.cookTime);
-  values.restTime = numStr(r.restTime);
-  values.ingredients = (r.ingredients ?? [])
-    .map((i) => ({
-      name: (i.name ?? "").trim(),
-      quantity: numStr(i.quantity),
-      unit: (i.unit ?? "").trim(),
-      isPrimary: false,
-    }))
-    .filter((i) => i.name);
-  values.steps = (r.steps ?? []).map((s) => s.trim()).filter(Boolean);
-  values.sources = ["Photo importée"];
-
+  const values = geminiRecipeToValues(res.recipe, "Photo importée");
   if (!values.title && !values.ingredients.length && !values.steps.length) {
     return { ok: false, error: "Aucune recette détectée sur la photo." };
   }
