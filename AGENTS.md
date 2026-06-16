@@ -19,3 +19,45 @@ the same change** to (a) `DESIGN.md` and (b) the `@theme` in `app/globals.css`
 running CSS is the source; `DESIGN.md` mirrors it. `npm run check:design` enforces
 this (parses the hex/values of DESIGN.md §2/§4, fails on any divergence) and is
 wired into `vercel-build`, so a drift breaks the deploy.
+
+# Development workflow
+
+## One task = one issue = one branch = one worktree
+
+Before starting any work, verify a **GitHub issue** exists for the task — create one if not. Branch naming:
+
+```
+feat/{number}-{short-slug}   ← new feature
+fix/{number}-{short-slug}    ← bug fix
+chore/{number}-{short-slug}  ← maintenance / refactor
+```
+
+## Worktrees
+
+Multiple tasks run in parallel across multiple Claude windows, each in its own worktree:
+
+```bash
+git worktree add ../{folder-name} {branch-name}
+# then in that worktree:
+PORT=300X npm run dev
+```
+
+Never work directly on `main`.
+
+## Atomic commits
+
+Every commit must:
+- Cover a single intention
+- Reference the issue: `feat: add portion stepper refs #42`
+- Use `closes #XX` in the **last** commit of a feature branch
+
+## Prisma migrations
+
+If two active worktrees both have pending migrations, **flag it before creating a new one**. Migrations must be sequenced to avoid conflicts.
+
+## End of task
+
+1. Update `CONTEXT.md` if the data model, routes, architecture, or conventions changed
+2. Run `npm run check:design` to validate token consistency
+3. Open a Pull Request referencing the issue
+4. After merge → `git worktree remove {path}`

@@ -2,6 +2,11 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.8] — 2026-06-16
+
+- **AGENTS.md — development workflow**: added branch naming convention (`feat/fix/chore/{number}-{slug}`), worktree usage rules (one per task, distinct port), atomic commit rules with issue references, Prisma migration sequencing guard, and end-of-task checklist (CONTEXT.md update → `check:design` → PR → worktree cleanup).
+- **DEPLOY.md**: translated from French to English, content unchanged.
+
 ## [v0.3.6] — 2026-06-16
 
 - **Web import — Marmiton parser**: Marmiton serves neither JSON-LD nor microdata
