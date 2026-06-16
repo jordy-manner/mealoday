@@ -31,6 +31,17 @@ export async function savePexelsKey(rawKey: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+/** Saves the Gemini API key as a server secret (recipe photo scanning). */
+export async function saveGeminiKey(rawKey: string): Promise<ActionResult> {
+  const key = z.string().trim().min(1, "Clé vide").safeParse(rawKey);
+  if (!key.success) return { ok: false, error: key.error.issues[0].message };
+  if (/^[•*\s]+$/.test(key.data)) return { ok: false, error: "Saisissez une nouvelle clé" };
+  await setSetting(SETTING_KEYS.geminiApiKey, key.data);
+  revalidatePath("/parametres/general");
+  revalidatePath("/recettes/nouvelle"); // toggles the scan option availability
+  return { ok: true };
+}
+
 /** Sets the seasonal-data auto-check frequency. */
 export async function setSeasonFrequency(value: string): Promise<ActionResult> {
   const parsed = z.enum(SEASON_FREQUENCIES).safeParse(value);

@@ -8,9 +8,13 @@ import { prisma } from "@/lib/prisma";
 
 export const SETTING_KEYS = {
   pexelsApiKey: "pexels_api_key",
+  geminiApiKey: "gemini_api_key",
   seasonCheckFrequency: "season_check_frequency",
   seasonLastChecked: "season_last_checked",
 } as const;
+
+/** Gemini model used for recipe photo scanning (overridable via env). */
+export const GEMINI_MODEL = process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash";
 
 /** Seasonal-data automatic check frequency. */
 export const SEASON_FREQUENCIES = ["Manuelle", "Hebdomadaire", "Mensuelle"] as const;
@@ -43,6 +47,21 @@ export async function getPexelsKey(): Promise<string | null> {
 /** Whether a Pexels key is configured (DB or env), without exposing its value. */
 export async function pexelsConfigured(): Promise<boolean> {
   return (await getPexelsKey()) !== null;
+}
+
+/**
+ * The effective Gemini API key: the DB setting takes precedence over the
+ * GEMINI_API_KEY environment variable (deployment fallback). Server-only —
+ * used for recipe photo scanning (lib/gemini.ts).
+ */
+export async function getGeminiKey(): Promise<string | null> {
+  const stored = await getSetting(SETTING_KEYS.geminiApiKey);
+  return stored?.trim() || process.env.GEMINI_API_KEY?.trim() || null;
+}
+
+/** Whether a Gemini key is configured (DB or env), without exposing its value. */
+export async function geminiConfigured(): Promise<boolean> {
+  return (await getGeminiKey()) !== null;
 }
 
 /** Current seasonal-check frequency (defaults to "Mensuelle"). */

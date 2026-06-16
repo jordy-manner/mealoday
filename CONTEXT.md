@@ -55,7 +55,7 @@ All many-to-many relations use **explicit join tables** (project convention).
 - **Utensil** + **RecipeUtensil** — join carrying `quantity?` (Int), `position`.
   Utensil also has a catalog `image?` + `imagePublicId?` (edited from `/parametres`).
 - **Setting** — server-side key/value store (`key` PK, `value`, `updatedAt`).
-  Holds the Pexels API key + seasonal-check frequency/last-check date. Secrets
+  Holds the Pexels + Gemini API keys + seasonal-check frequency/last-check date. Secrets
   read server-side only, never sent to the client (`lib/settings.ts`).
 - **Tag** + **RecipeTag** — shared tags.
 - **Category** + **RecipeCategory** — a recipe may have several categories (`position`).
@@ -85,11 +85,12 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   `extractRecipeFromUrl` server action fetches the page server-side and parses
   **schema.org/Recipe** — JSON-LD preferred, incl. `@graph`, with a title
   fallback — prefilling title/description/ingredients/steps/times/servings/image,
-  the URL added as the first source; fields stay editable). **Scan/OCR** is live
-  too: import (or, on mobile, shoot via `capture`) one or more photos → **Tesseract**
-  (`tesseract.js`, client-side so the image never leaves the device, `fra`+`eng`,
-  progress %) recognizes the text, a heuristic splits it into title/ingredients/
-  steps (source = "Photo importée"). Manual entry is the third method. The form
+  the URL added as the first source; fields stay editable). **Photo scan** uses
+  **Gemini** (vision): import/shoot one or more photos → a server action sends them
+  to the Gemini API which returns a **structured** recipe (title/ingredients/steps/
+  times), prefilling the form (source = "Photo importée"). The image is sent to
+  Google. The scan card is **enabled only when a Gemini key is configured**
+  (otherwise disabled, "Clé requise"). Manual entry is the third method. The form
   carries a **Sources** section (multi URLs / free text → `RecipeSource`). Shared
   ingredient-line parsing (quantity/unit/name) lives in `lib/recipe-parse.ts`.
 - `/saisons` — **seasonal calendar** (client-driven `SeasonsBrowser`, state synced
@@ -121,8 +122,9 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   `_rail.tsx`, grouped Préférences / Catalogues / Référentiels / Données, sticky,
   active item `bg-accent-soft text-accent-ink`). `/parametres` redirects to
   `/parametres/ingredients`. Sub-routes:
-  - `/parametres/general` — Pexels API key (server secret, `lib/settings`),
-    AI-key placeholder ("À venir").
+  - `/parametres/general` — Pexels API key + **Gemini API key** (server secrets,
+    `lib/settings`, generic `ApiKeyForm`). The Gemini key enables the photo-scan
+    creation method.
   - `/parametres/apparence` — theme (clair/sombre) + accent (Terracotta/Paprika/
     Ambre/Olive), a **client preference** (localStorage), applied app-wide by
     overriding `--color-*` on `<html>` (see Design system / dark mode).
@@ -284,10 +286,13 @@ rendering, which these pages already are).
 - `app/recettes/` — `page.tsx` (list/search), `home-screen` (search UI), `recipe-detail`,
   `recipe-form` (+ `step-editor`, `tags-combobox`, `form-combobox` = shared combobox +
   unit-create modal), `actions.ts`, `catalog-actions.ts` (on-the-fly catalog creation),
-  `[slug]/`, `nouvelle/` (`create-flow` = method chooser + web-crawl + OCR-scan sub-steps),
+  `[slug]/`, `nouvelle/` (`create-flow` = method chooser + web-crawl sub-step),
   `import-actions.ts` (`extractRecipeFromUrl`: server-side fetch + schema.org/Recipe parsing).
 - `lib/recipe-parse.ts` — client-safe ingredient-line parser (quantity/unit/name),
-  shared by the web-crawl and OCR import paths. OCR uses `tesseract.js` (client-side).
+  used by the web-crawl import path.
+- `lib/gemini.ts` — server-only Gemini (Generative Language) REST client:
+  `extractRecipeFromImages` (inline images → structured recipe JSON). Key + model
+  from `lib/settings` (`getGeminiKey`, `GEMINI_MODEL`).
 - `app/components/` — `icons`, `recipe-ui` (Photo/Tag/Difficulty/helpers), `recipe-card`
   (Magazine card), `top-bar`, `mobile-tab-bar` (bottom nav + "Plus" sheet),
   `nav-more-menu` (desktop "Plus" dropdown), `nav-data` (shared secondary-nav data),
@@ -363,7 +368,11 @@ token swap adds `.no-transition` on `<html>` for one frame (`app/globals.css`).
 - `PEXELS_API_KEY` — seasonal calendar produce images + catalog thumbnails
   (`lib/pexels.ts`, server-only, cached). Unset → gradient placeholders. Can be
   **overridden at runtime** by the Pexels key saved from `/parametres/general`
-  (stored in the `Setting` table; `getPexelsKey` prefers the DB value). The seasonal produce itself (fruits,
+  (stored in the `Setting` table; `getPexelsKey` prefers the DB value).
+- `GEMINI_API_KEY` — Google Gemini API key for the recipe photo scan (`lib/gemini.ts`,
+  server-only). Like Pexels, a value saved from `/parametres/general` (Setting table)
+  overrides it (`getGeminiKey`). Unset → the scan creation method is disabled.
+  `GEMINI_MODEL` (optional) overrides the model id (default `gemini-2.5-flash`). The seasonal produce itself (fruits,
   vegetables, pulses, herbs) is stored in the **DB** (Ingredient season fields, editable
   from the app/CLI); `lib/data/seasonality.json` + `carbon-ademe.json` are the committed
   **seed source + fallback** (no external runtime API on reads). Carbon (`ecv`) comes

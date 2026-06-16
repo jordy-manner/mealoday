@@ -2,6 +2,25 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.3.3] — 2026-06-16
+
+- **Recipe photo scan — switch from Tesseract to Gemini**: the Tesseract OCR
+  attempt is removed (poor recognition quality) and replaced by **Gemini**
+  (vision). The scan sub-step sends the photo(s) to a server action
+  (`extractRecipeFromImagesAction`) → `lib/gemini.ts` calls the Gemini API (REST,
+  no SDK) with a **structured-output schema**, returning a recipe (title /
+  ingredients {name,quantity,unit} / steps / times) that prefills the form
+  (source = "Photo importée"; fields stay editable). The image is sent to Google.
+- **Key gating**: the Gemini key is a server secret (`GEMINI_API_KEY` env, or saved
+  from **Paramètres › Général**, Setting table — same pattern as Pexels). On the
+  creation chooser the **scan card is disabled ("Clé requise") until a key is set**;
+  a deep link to `?method=scan` falls back to the chooser. Model overridable via
+  `GEMINI_MODEL`.
+- **Photo uploads**: images are downscaled client-side (longest side ≤ 1600 px,
+  JPEG) before upload, and the Server Action body cap is raised to 8 MB
+  (`next.config`) — fixes "Body exceeded 1 MB limit" on phone photos (also covers
+  the recipe photo upload).
+
 ## [v0.3.2] — 2026-06-15
 
 - **Recipe creation — OCR scan** (design handoff `import`, stage 3/3, completes

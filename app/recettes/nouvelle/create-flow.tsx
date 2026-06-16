@@ -2,47 +2,114 @@
 
 import { useRef, useState, useTransition } from "react";
 import { Icon, type IconName } from "../../components/icons";
-import {
-  EMPTY_RECIPE_VALUES,
-  RecipeForm,
-  type IngredientOption,
-  type RecipeFormValues,
-  type UnitOption,
-} from "../recipe-form";
+import { RecipeForm, type IngredientOption, type RecipeFormValues, type UnitOption } from "../recipe-form";
 import type { FormState } from "../actions";
-import { extractRecipeFromUrl } from "../import-actions";
-import { parseIngredientLine } from "@/lib/recipe-parse";
+import { extractRecipeFromUrl, extractRecipeFromImagesAction } from "../import-actions";
 
-/** Splits raw OCR text into a recipe (heuristic; fields stay editable). The first
- *  line is the title; lines with a leading quantity or short label are ingredients,
- *  longer sentences are steps. Source defaults to "Photo importée". */
-function parseOcrText(text: string): RecipeFormValues {
-  const values: RecipeFormValues = { ...EMPTY_RECIPE_VALUES };
-  const lines = text
-    .split(/\r?\n/)
-    .map((l) => l.replace(/\s+/g, " ").trim())
-    .filter(Boolean);
-  if (!lines.length) return values;
+// Method picker shown before the recipe form: import from the web, scan a photo
+// (Gemini), or fill it in by hand. Web import and manual entry are always live;
+// photo scan is enabled only when a Gemini API key is configured (else the card
+// is disabled). The selected method is mirrored to the URL (?method=).
 
-  values.title = lines[0];
-  const hasQty = (l: string) =>
-    /^([0-9]+(?:[.,][0-9]+)?(?:\s*\/\s*[0-9]+)?|[½¼¾⅓⅔])\b/.test(l);
-  const ings: string[] = [];
-  const steps: string[] = [];
-  for (const l of lines.slice(1)) {
-    const words = l.split(/\s+/).length;
-    if (hasQty(l) || (words <= 5 && !/[.!?]$/.test(l))) ings.push(l);
-    else steps.push(l);
-  }
-  values.ingredients = ings.map((l) => ({ ...parseIngredientLine(l), isPrimary: false }));
-  values.steps = steps;
-  values.sources = ["Photo importée"];
-  return values;
+type Method = "choose" | "manual" | "web" | "scan";
+
+type FormProps = {
+  action: (prev: FormState, formData: FormData) => Promise<FormState>;
+  ingredientOptions: IngredientOption[];
+  unitOptions: UnitOption[];
+  utensilOptions: string[];
+  tagOptions: string[];
+  categoryOptions: string[];
+  unitTypeOptions: { id: string; name: string }[];
+  mediaEnabled: boolean;
+  /** Photo scan is available only when a Gemini key is configured. */
+  scanEnabled: boolean;
+};
+
+function MethodCard({
+  icon,
+  title,
+  desc,
+  onClick,
+  disabled,
+  badge,
+  accent,
+}: {
+  icon: IconName;
+  title: string;
+  desc: string;
+  onClick?: () => void;
+  disabled?: boolean;
+  badge?: string;
+  accent?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className={
+        "flex w-full items-center gap-4 rounded-card border p-4 text-left transition disabled:cursor-default disabled:opacity-60 " +
+        (accent
+          ? "border-accent bg-accent-soft/40 hover:bg-accent-soft"
+          : "border-line bg-surface hover:bg-surface-muted")
+      }
+    >
+      <span
+        className={
+          "grid h-12 w-12 shrink-0 place-items-center rounded-input " +
+          (accent ? "bg-accent text-white" : "bg-surface-muted text-ink-soft")
+        }
+      >
+        <Icon name={icon} size={24} />
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col">
+        <b className="flex items-center gap-2 text-[15px] font-bold text-ink">
+          {title}
+          {disabled && badge && (
+            <span className="rounded-full bg-surface-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] text-ink-faint">
+              {badge}
+            </span>
+          )}
+        </b>
+        <span className="text-[13px] text-ink-soft">{desc}</span>
+      </span>
+      {!disabled && <Icon name="arrow" size={18} className="shrink-0 text-ink-faint" />}
+    </button>
+  );
 }
 
-/** OCR scan sub-step: import (or shoot on mobile) one or more photos, run
- *  Tesseract client-side (fra+eng, the image never leaves the device), then
- *  parse the recognized text into a prefilled recipe. */
+/** Downscales an image client-side (longest side ≤ max, JPEG) to keep the
+ *  Server Action payload small and speed up the vision call. Falls back to the
+ *  original file if the browser can't decode it (e.g. some HEIC). */
+async function downscaleImage(file: File, max = 1600, quality = 0.8): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
+    // Already small enough and decoded: keep as-is.
+    if (scale === 1 && file.size < 900_000) {
+      bitmap.close?.();
+      return file;
+    }
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, "image/jpeg", quality));
+    if (!blob) return file;
+    return new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
+
+/** Photo-scan sub-step: import (or shoot on mobile) one or more photos, send them
+ *  to Gemini (server-side) and prefill the form from the structured result. */
 function ScanStep({
   onBack,
   onExtracted,
@@ -51,8 +118,8 @@ function ScanStep({
   onExtracted: (values: RecipeFormValues) => void;
 }) {
   const [images, setImages] = useState<{ url: string; file: File }[]>([]);
-  const [progress, setProgress] = useState<number | null>(null); // null = idle
   const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -67,37 +134,17 @@ function ScanStep({
       return xs.filter((_, x) => x !== i);
     });
 
-  const run = async () => {
-    if (!images.length || progress !== null) return;
+  const run = () => {
+    if (!images.length || pending) return;
     setError(null);
-    setProgress(0);
-    try {
-      const { createWorker } = await import("tesseract.js");
-      const total = images.length;
-      const done = { count: 0 };
-      const worker = await createWorker("fra+eng", 1, {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setProgress(Math.round(((done.count + m.progress) / total) * 100));
-          }
-        },
-      });
-      let text = "";
-      for (const img of images) {
-        const { data } = await worker.recognize(img.file);
-        text += data.text + "\n";
-        done.count += 1;
-        setProgress(Math.round((done.count / total) * 100));
-      }
-      await worker.terminate();
-      onExtracted(parseOcrText(text));
-    } catch {
-      setError("La reconnaissance a échoué. Réessayez ou saisissez la recette à la main.");
-      setProgress(null);
-    }
+    start(async () => {
+      const fd = new FormData();
+      for (const img of images) fd.append("image", await downscaleImage(img.file));
+      const res = await extractRecipeFromImagesAction(fd);
+      if (res.ok) onExtracted(res.values);
+      else setError(res.error);
+    });
   };
-
-  const busy = progress !== null;
 
   return (
     <div className="max-w-2xl animate-fade-up">
@@ -106,8 +153,8 @@ function ScanStep({
         Scanner une recette
       </h1>
       <p className="mb-5 text-[15px] text-ink-soft">
-        Importez une ou plusieurs photos (livre, fiche manuscrite…). Le texte est reconnu sur votre
-        appareil puis structuré en recette. Tout reste modifiable ensuite.
+        Importez une ou plusieurs photos (livre, fiche manuscrite…). La recette est lue et
+        structurée par l&apos;IA, puis pré-remplie — tout reste modifiable ensuite.
       </p>
 
       <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-3">
@@ -149,8 +196,8 @@ function ScanStep({
 
       <p className="mt-3 text-[13px] text-ink-faint">
         {images.length
-          ? `${images.length} image${images.length > 1 ? "s" : ""} à analyser`
-          : "Importez la ou les photos de votre recette — reconnaissance par Tesseract."}
+          ? `${images.length} image${images.length > 1 ? "s" : ""} à analyser · envoyée${images.length > 1 ? "s" : ""} à Google (Gemini) pour analyse.`
+          : "Importez la ou les photos de votre recette. L'image est envoyée à Google (Gemini) pour analyse."}
       </p>
 
       {error && (
@@ -163,13 +210,13 @@ function ScanStep({
         <button
           type="button"
           onClick={run}
-          disabled={!images.length || busy}
+          disabled={!images.length || pending}
           className="inline-flex items-center gap-2 rounded-full bg-accent px-5 py-3 text-[15px] font-bold text-white shadow-card transition hover:bg-accent-deep disabled:opacity-60"
         >
-          {busy ? (
+          {pending ? (
             <>
               <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              Lecture du texte… {progress}%
+              Analyse en cours…
             </>
           ) : (
             <>
@@ -179,75 +226,6 @@ function ScanStep({
         </button>
       </div>
     </div>
-  );
-}
-
-// Method picker shown before the recipe form: import from the web, scan a photo
-// (OCR), or fill it in by hand. Stage 1 wires the chooser + manual entry; the
-// web-crawl and OCR sub-steps land in later v0.3 releases (cards disabled
-// "Bientôt" until then). Selected method is mirrored to the URL (?method=).
-
-type Method = "choose" | "manual" | "web" | "scan";
-
-type FormProps = {
-  action: (prev: FormState, formData: FormData) => Promise<FormState>;
-  ingredientOptions: IngredientOption[];
-  unitOptions: UnitOption[];
-  utensilOptions: string[];
-  tagOptions: string[];
-  categoryOptions: string[];
-  unitTypeOptions: { id: string; name: string }[];
-  mediaEnabled: boolean;
-};
-
-function MethodCard({
-  icon,
-  title,
-  desc,
-  onClick,
-  soon,
-  accent,
-}: {
-  icon: IconName;
-  title: string;
-  desc: string;
-  onClick?: () => void;
-  soon?: boolean;
-  accent?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      disabled={soon}
-      onClick={onClick}
-      className={
-        "flex w-full items-center gap-4 rounded-card border p-4 text-left transition disabled:cursor-default disabled:opacity-60 " +
-        (accent
-          ? "border-accent bg-accent-soft/40 hover:bg-accent-soft"
-          : "border-line bg-surface hover:bg-surface-muted")
-      }
-    >
-      <span
-        className={
-          "grid h-12 w-12 shrink-0 place-items-center rounded-input " +
-          (accent ? "bg-accent text-white" : "bg-surface-muted text-ink-soft")
-        }
-      >
-        <Icon name={icon} size={24} />
-      </span>
-      <span className="flex min-w-0 flex-1 flex-col">
-        <b className="flex items-center gap-2 text-[15px] font-bold text-ink">
-          {title}
-          {soon && (
-            <span className="rounded-full bg-surface-muted px-1.5 py-0.5 font-mono text-[9.5px] uppercase tracking-[0.08em] text-ink-faint">
-              Bientôt
-            </span>
-          )}
-        </b>
-        <span className="text-[13px] text-ink-soft">{desc}</span>
-      </span>
-      {!soon && <Icon name="arrow" size={18} className="shrink-0 text-ink-faint" />}
-    </button>
   );
 }
 
@@ -337,9 +315,12 @@ function CrawlStep({
 
 export function CreateFlow({
   initialMethod,
+  scanEnabled,
   ...formProps
 }: FormProps & { initialMethod?: Method }) {
-  const [method, setMethod] = useState<Method>(initialMethod ?? "choose");
+  // Guard: a deep link to ?method=scan is ignored when scanning is disabled.
+  const start: Method = initialMethod === "scan" && !scanEnabled ? "choose" : (initialMethod ?? "choose");
+  const [method, setMethod] = useState<Method>(start);
   const [webValues, setWebValues] = useState<RecipeFormValues | null>(null);
   const [scanValues, setScanValues] = useState<RecipeFormValues | null>(null);
 
@@ -377,7 +358,7 @@ export function CreateFlow({
     );
   }
 
-  if (method === "scan") {
+  if (method === "scan" && scanEnabled) {
     if (!scanValues) {
       return <ScanStep onBack={() => select("choose")} onExtracted={setScanValues} />;
     }
@@ -413,8 +394,14 @@ export function CreateFlow({
         <MethodCard
           icon="camera"
           title="Scanner une photo"
-          desc="Livre ou fiche manuscrite — reconnaissance de texte (OCR)."
-          onClick={() => select("scan")}
+          desc={
+            scanEnabled
+              ? "Livre ou fiche manuscrite — lecture par l'IA (Gemini)."
+              : "Nécessite une clé API Gemini (Paramètres › Général)."
+          }
+          disabled={!scanEnabled}
+          badge="Clé requise"
+          onClick={scanEnabled ? () => select("scan") : undefined}
         />
         <MethodCard
           icon="plus"

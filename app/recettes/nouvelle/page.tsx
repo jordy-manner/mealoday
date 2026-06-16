@@ -4,6 +4,7 @@ import { getMediaStore } from "@/lib/media";
 import { Icon } from "../../components/icons";
 import { createRecipeAction } from "../actions";
 import { CreateFlow } from "./create-flow";
+import { geminiConfigured } from "@/lib/settings";
 
 export const metadata = { title: "Nouvelle recette" };
 
@@ -20,7 +21,7 @@ export default async function NewRecipePage({
   const { method } = await searchParams;
   const initialMethod: Method =
     method === "manual" || method === "web" || method === "scan" ? method : "choose";
-  const [ingredients, units, utensils, tags, categories, unitTypes] = await Promise.all([
+  const [ingredients, units, utensils, tags, categories, unitTypes, scanEnabled] = await Promise.all([
     prisma.ingredient.findMany({
       orderBy: { name: "asc" },
       select: { name: true, aisleId: true, defaultUnitId: true, defaultUnit: { select: { name: true } } },
@@ -30,6 +31,7 @@ export default async function NewRecipePage({
     prisma.tag.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.category.findMany({ orderBy: { name: "asc" }, select: { name: true } }),
     prisma.unitType.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+    geminiConfigured(),
   ]);
 
   return (
@@ -55,6 +57,7 @@ export default async function NewRecipePage({
           categoryOptions={categories.map((c) => c.name)}
           unitTypeOptions={unitTypes}
           mediaEnabled={getMediaStore().configured}
+          scanEnabled={scanEnabled}
         />
       </div>
     </main>

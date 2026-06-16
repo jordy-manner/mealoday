@@ -7,6 +7,7 @@
 
 import type { RecipeFormValues } from "./recipe-form";
 import { parseIngredientLine } from "@/lib/recipe-parse";
+import { extractRecipeFromImages, type GeminiImage } from "@/lib/gemini";
 
 export type ExtractResult =
   | { ok: true; values: RecipeFormValues }
@@ -240,4 +241,56 @@ export async function extractRecipeFromUrl(rawUrl: string): Promise<ExtractResul
   }
 
   return { ok: false, error: "Aucune recette structurée détectée sur cette page." };
+}
+
+const numStr = (n: number | null | undefined): string =>
+  typeof n === "number" && Number.isFinite(n) ? String(n) : "";
+
+/**
+ * OCR-free photo scan: read the uploaded image(s), send them to Gemini
+ * (server-side) and map the structured recipe back onto the editable form.
+ * The source defaults to "Photo importée".
+ */
+export async function extractRecipeFromImagesAction(formData: FormData): Promise<ExtractResult> {
+  const files = formData.getAll("image").filter((f): f is File => f instanceof File && f.size > 0);
+  if (!files.length) return { ok: false, error: "Ajoutez au moins une photo." };
+
+  let images: GeminiImage[];
+  try {
+    images = await Promise.all(
+      files.map(async (f) => ({
+        mimeType: f.type || "image/jpeg",
+        base64: Buffer.from(await f.arrayBuffer()).toString("base64"),
+      })),
+    );
+  } catch {
+    return { ok: false, error: "Lecture des images impossible." };
+  }
+
+  const res = await extractRecipeFromImages(images);
+  if (!res.ok) return res;
+
+  const r = res.recipe;
+  const values = emptyValues();
+  values.title = (r.title ?? "").trim();
+  values.description = (r.description ?? "").trim();
+  values.servings = numStr(r.servings);
+  values.prepTime = numStr(r.prepTime);
+  values.cookTime = numStr(r.cookTime);
+  values.restTime = numStr(r.restTime);
+  values.ingredients = (r.ingredients ?? [])
+    .map((i) => ({
+      name: (i.name ?? "").trim(),
+      quantity: numStr(i.quantity),
+      unit: (i.unit ?? "").trim(),
+      isPrimary: false,
+    }))
+    .filter((i) => i.name);
+  values.steps = (r.steps ?? []).map((s) => s.trim()).filter(Boolean);
+  values.sources = ["Photo importée"];
+
+  if (!values.title && !values.ingredients.length && !values.steps.length) {
+    return { ok: false, error: "Aucune recette détectée sur la photo." };
+  }
+  return { ok: true, values };
 }
