@@ -10,9 +10,10 @@ Une commande → issues sélectionnées traitées en parallèle pendant la nuit.
 ## Pré-requis
 
 ```bash
-command -v tmux   || echo "MANQUANT: tmux (sudo apt install tmux)"
-command -v claude || echo "MANQUANT: claude CLI"
-command -v ttyd   || echo "OPTIONNEL: ttyd (monitoring web mobile)"
+command -v tmux      || echo "MANQUANT: tmux (sudo apt install tmux)"
+command -v claude    || echo "MANQUANT: claude CLI"
+command -v ttyd      || echo "OPTIONNEL: ttyd (monitoring web mobile)"
+command -v qrencode  || echo "OPTIONNEL: qrencode (sudo apt install qrencode)"
 ```
 
 ---
@@ -200,6 +201,11 @@ Monitoring :
   ✓ GitHub comments (app GitHub mobile)
   ✓ ntfy.sh → https://ntfy.sh/{topic}
   {si ttyd} ✓ Terminal web → http://{ip}:7681
+
+{si qrencode disponible, générer et afficher le QR ntfy ici}
+```bash
+qrencode -t ANSIUTF8 "https://ntfy.sh/{topic}"
+```
 
 Commandes utiles :
   tmux attach -t nightshift               # voir toutes les fenêtres
