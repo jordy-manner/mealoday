@@ -29,10 +29,10 @@ const VIEWS: { key: SeasonView; icon: "grid" | "rows" | "shelf"; label: string }
 // When the selection matches a season exactly, the copy uses its own phrasing
 // ("au printemps", "en été"…) instead of the generic "sur N mois".
 const SEASONS_COPY: { months: number[]; em: string; label: string }[] = [
-  { months: [3, 4, 5], em: "au printemps", label: "Printemps" },
-  { months: [6, 7, 8], em: "en été", label: "Été" },
-  { months: [9, 10, 11], em: "en automne", label: "Automne" },
-  { months: [12, 1, 2], em: "en hiver", label: "Hiver" },
+  { months: [3, 4, 5, 6], em: "au printemps", label: "Printemps" },
+  { months: [6, 7, 8, 9], em: "en été", label: "Été" },
+  { months: [9, 10, 11, 12], em: "en automne", label: "Automne" },
+  { months: [12, 1, 2, 3], em: "en hiver", label: "Hiver" },
 ];
 
 const norm = (s: string) =>
@@ -133,7 +133,7 @@ export function SeasonsBrowser({
   const n = months.length;
   const monthLower = n === 1 ? MONTHS[months[0] - 1].toLowerCase() : "";
   const season =
-    n === 3 ? SEASONS_COPY.find((s) => s.months.every((m) => selSet.has(m))) : undefined;
+    n === 4 ? SEASONS_COPY.find((s) => s.months.every((m) => selSet.has(m))) : undefined;
   const titleEm =
     season ? season.em
     : n >= 12 ? "cette année"

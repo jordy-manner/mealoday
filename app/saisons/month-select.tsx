@@ -5,10 +5,10 @@ import { Dropdown, type DropdownOption } from "./dropdown";
 import { ALL_MONTHS, MONTHS, MONTHS_ABBR } from "@/lib/seasons-data";
 
 const SEASONS: [string, number[]][] = [
-  ["Printemps", [3, 4, 5]],
-  ["Été", [6, 7, 8]],
-  ["Automne", [9, 10, 11]],
-  ["Hiver", [12, 1, 2]],
+  ["Printemps", [3, 4, 5, 6]],
+  ["Été", [6, 7, 8, 9]],
+  ["Automne", [9, 10, 11, 12]],
+  ["Hiver", [12, 1, 2, 3]],
 ];
 
 /** Multi-month selector: checkable pills + shortcuts (desktop) / dropdown (mobile). */
