@@ -128,13 +128,19 @@ fi
 
 ### 6. GitHub comments + ntfy de démarrage
 
+Générer le token bot **une fois** avant la boucle :
+
+```bash
+NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/recipe-manager)
+```
+
 Pour chaque issue sélectionnée :
 
 ```bash
-gh issue comment {numéro} \
+GH_TOKEN=$NIGHTSHIFT_TOKEN gh issue comment {numéro} \
   --repo jordy-manner/recipe-manager \
-  --body "🌙 **Night shift démarré** — Claude implémente cette issue de façon autonome.
-Worktree : \`{slug}/\` · Port dev : \`{port}\`"
+  --body "🌙 **Night shift started** — Claude is autonomously implementing this issue.
+Worktree: \`{slug}/\` · Dev port: \`{port}\`"
 ```
 
 Notification ntfy globale :
@@ -178,29 +184,31 @@ Règles :
 Séquence :
 
 1. Poste un comment de démarrage :
-   gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "⚙️ Implémentation en cours..."
+   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "⚙️ Implementation in progress..."
 
 2. Implémente l'issue dans ce worktree.
 
 3. Si bloqué :
-   gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "🚧 Bloqué : {raison}"
-   curl -s -H "Title: 🚧 Bloqué #{numéro}" -H "Tags: warning" -H "Priority: high" -d "{raison}" https://ntfy.sh/{topic}
+   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "🚧 Blocked: {reason}"
+   curl -s -H "Title: 🚧 Blocked #{numéro}" -H "Tags: warning" -H "Priority: high" -d "{reason}" https://ntfy.sh/{topic}
    Arrête-toi et attends.
 
 4. Quand terminé, pousse la branche :
    git push origin {branch}
 
 5. Poste le comment de fin (sans ouvrir de PR) :
-   gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implémentation terminée — branche \`{branch}\` prête pour review."
+   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
 
-6. curl -s -H "Title: ✅ #{numéro} prêt" -H "Tags: white_check_mark" -d "{titre} — prêt pour review" https://ntfy.sh/{topic}
+6. curl -s -H "Title: ✅ #{numéro} ready" -H "Tags: white_check_mark" -d "{titre} — ready for review" https://ntfy.sh/{topic}
 PROMPT
 
 # 2. Wrapper script — isole l'appel Claude, rien ne s'exécute après sa sortie
+# Le token bot est injecté comme variable d'environnement pour les gh commands autonomes
 cat > /tmp/ns-run-{numéro}.sh << SCRIPT
 #!/bin/bash
+export NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/recipe-manager)
 cd /home/jmanner/www/html/__lab/recipe-manager/{slug}
-exec claude --dangerously-skip-permissions -p "\$(cat /tmp/ns-{numéro}.txt)"
+exec claude --dangerously-skip-permissions -p "\$(cat /tmp/ns-{numéro}.txt | sed 's|{nightshift_token}|'\$NIGHTSHIFT_TOKEN'|g')"
 SCRIPT
 chmod +x /tmp/ns-run-{numéro}.sh
 
