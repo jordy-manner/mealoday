@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useRef, useState, useTransition } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Icon, type IconName } from "../../components/icons";
 import { RecipeForm, type IngredientOption, type RecipeFormValues, type UnitOption } from "../recipe-form";
 import type { FormState } from "../actions";
@@ -358,18 +359,32 @@ export function CreateFlow({
   scanEnabled,
   ...formProps
 }: FormProps & { initialMethod?: Method }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   // Guard: a deep link to ?method=scan is ignored when scanning is disabled.
   const start: Method = initialMethod === "scan" && !scanEnabled ? "choose" : (initialMethod ?? "choose");
   const [method, setMethod] = useState<Method>(start);
   const [webValues, setWebValues] = useState<RecipeFormValues | null>(null);
   const [scanValues, setScanValues] = useState<RecipeFormValues | null>(null);
 
+  // Reset to choose screen when the URL drops the ?method= param — happens when
+  // the user clicks "+ Créer une recette" from the top-bar or tab-bar mid-flow.
+  const urlMethod = searchParams.get("method");
+  useEffect(() => {
+    if (!urlMethod) {
+      setMethod("choose");
+      setWebValues(null);
+      setScanValues(null);
+    }
+  }, [urlMethod]);
+
   const select = (m: Method) => {
     setMethod(m);
     if (m !== "web") setWebValues(null);
     if (m !== "scan") setScanValues(null);
     const url = m === "choose" ? "/recettes/nouvelle" : `/recettes/nouvelle?method=${m}`;
-    window.history.replaceState(null, "", url);
+    router.replace(url);
   };
 
   if (method === "manual") {
