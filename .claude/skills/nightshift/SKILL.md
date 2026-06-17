@@ -171,6 +171,8 @@ Règles :
 - Lis CLAUDE.md + AGENTS.md + DESIGN.md avant tout code.
 - Commits atomiques avec refs #{numéro}.
 - Après changement UI : npm run check:design.
+- NE PAS ajouter Co-Authored-By dans les messages de commit.
+- NE PAS ouvrir de PR — la validation et la PR sont faites manuellement par jordy-manner.
 
 Séquence :
 
@@ -184,12 +186,13 @@ Séquence :
    curl -s -H "Title: 🚧 Bloqué #{numéro}" -H "Tags: warning" -H "Priority: high" -d "{raison}" https://ntfy.sh/{topic}
    Arrête-toi et attends.
 
-4. Quand terminé, ouvre la PR avec "Closes #{numéro}" dans le body.
+4. Quand terminé, pousse la branche :
+   git push origin {branch}
 
-5. Poste le comment de fin :
-   gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Terminé — PR ouverte."
+5. Poste le comment de fin (sans ouvrir de PR) :
+   gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implémentation terminée — branche \`{branch}\` prête pour review."
 
-6. curl -s -H "Title: ✅ #{numéro} terminé" -H "Tags: white_check_mark" -d "{titre}" https://ntfy.sh/{topic}
+6. curl -s -H "Title: ✅ #{numéro} prêt" -H "Tags: white_check_mark" -d "{titre} — prêt pour review" https://ntfy.sh/{topic}
 PROMPT
 
 # 2. Wrapper script — isole l'appel Claude, rien ne s'exécute après sa sortie
