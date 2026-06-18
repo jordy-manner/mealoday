@@ -2,6 +2,11 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.4.0] — 2026-06-18
+
+- **Rebrand → Mealoday**: app renamed from "Recipe Manager" to Mealoday — dark chrome theme, egg-yolk logo, updated recipe views.
+- **gh-new skill**: `gh/new` path flattened to `gh-new`; slash command `/gh new` (with space) restored.
+
 ## [v0.3.11] — 2026-06-18
 
 - **nightshift skill**: full workflow revision — overhauled issue processing loop, improved error handling and status transitions.
