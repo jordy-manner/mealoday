@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// /parametres has no content of its own — it opens on the Ingrédients catalog.
+// /parametres has no content of its own — it opens on General settings.
 export default function SettingsIndexPage() {
-  redirect("/parametres/ingredients");
+  redirect("/parametres/general");
 }
