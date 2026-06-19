@@ -1,6 +1,6 @@
-# Recipe Manager
+# Mealoday
 
-Application de gestion de recettes de cuisine (titre provisoire).
+Application de gestion de recettes de cuisine.
 
 ## Stack
 
@@ -38,6 +38,6 @@ npm run dev                 # http://localhost:3000
 
 ## Environnements & déploiement
 
-- **Branche de version** `v0.1` → **Preview** Vercel (base Neon **dev**) · **`main`** → **Production** (base Neon **prod**).
+- **Branche de version** `v0.X` → **Preview** Vercel (base Neon **dev**) · **`main`** → **Production** (base Neon **prod**).
 - Workflow : `preview-release` (commit + tag + push branche → Preview), `prod-release` (merge `main` + push → Production).
 - Détails et mise en prod : voir **[DEPLOY.md](./DEPLOY.md)**.

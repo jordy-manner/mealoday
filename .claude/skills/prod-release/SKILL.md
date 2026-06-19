@@ -26,13 +26,13 @@ Parade (intégrée aux étapes) : **attendre la fin du build Preview du SHA avan
 ## Étapes
 
 1. **Garde-fou identité (OBLIGATOIRE avant tout push).** `git config --local user.name "jordy-manner"` et `git config --local user.email "jordy.manner@milkcreation.fr"`.
-2. **Vérifier l'état.** Être sur la branche de version, working tree propre (sinon faire d'abord `preview-release`). Mémoriser le SHA (`git rev-parse <branche-version>`) et l'URL prod (`gh repo view jordy-manner/recipe-manager --json homepageUrl -q .homepageUrl`). Lister les commits à promouvoir : `git log --oneline main..<branche-version>` et les tags concernés.
+2. **Vérifier l'état.** Être sur la branche de version, working tree propre (sinon faire d'abord `preview-release`). Mémoriser le SHA (`git rev-parse <branche-version>`) et l'URL prod (`gh repo view jordy-manner/mealoday --json homepageUrl -q .homepageUrl`). Lister les commits à promouvoir : `git log --oneline main..<branche-version>` et les tags concernés.
 3. **Anti-déduplication : attendre la fin du build Preview du SHA.** Avant de merger, s'assurer que le déploiement **Preview** du SHA est **terminé** (pas « in progress »), pour que le push `main` déclenche son propre build Production :
    ```bash
    sha=$(git rev-parse <branche-version>)
    for i in $(seq 1 40); do
-     s=$(gh api "repos/jordy-manner/recipe-manager/deployments?sha=$sha&environment=Preview&per_page=1" --jq '.[0].id' 2>/dev/null)
-     [ -n "$s" ] && st=$(gh api "repos/jordy-manner/recipe-manager/deployments/$s/statuses?per_page=1" --jq '.[0].state' 2>/dev/null)
+     s=$(gh api "repos/jordy-manner/mealoday/deployments?sha=$sha&environment=Preview&per_page=1" --jq '.[0].id' 2>/dev/null)
+     [ -n "$s" ] && st=$(gh api "repos/jordy-manner/mealoday/deployments/$s/statuses?per_page=1" --jq '.[0].state' 2>/dev/null)
      echo "preview state: ${st:-pending}"; [ "$st" = success ] || [ "$st" = failure ] || [ "$st" = error ] && break; sleep 15
    done
    ```
@@ -42,22 +42,22 @@ Parade (intégrée aux étapes) : **attendre la fin du build Preview du SHA avan
 7. **Vérifier qu'un déploiement Production existe pour le SHA** (sinon : déduplication). Attendre qu'un déploiement `environment=Production` du SHA apparaisse et passe `success` :
    ```bash
    for i in $(seq 1 24); do
-     gh api "repos/jordy-manner/recipe-manager/deployments?sha=$sha&environment=Production&per_page=1" --jq '.[0].id' 2>/dev/null | grep -q . && break
+     gh api "repos/jordy-manner/mealoday/deployments?sha=$sha&environment=Production&per_page=1" --jq '.[0].id' 2>/dev/null | grep -q . && break
      echo "pas encore de déploiement Production…"; sleep 15
    done
    ```
    **Si aucun déploiement Production n'apparaît** (≈6 min) → **promouvoir le déploiement Preview existant** en Production :
-   - Dashboard Vercel → projet `recipe-manager` → Deployments → déploiement du SHA → **⋯ → Promote to Production** ; **ou** `vercel promote <url-preview>` si le CLI Vercel est authentifié.
-   - L'URL Preview du SHA : `gh api "repos/jordy-manner/recipe-manager/deployments?sha=$sha&environment=Preview&per_page=1" --jq '.[0].id'` puis `…/statuses` (`environment_url`).
+   - Dashboard Vercel → projet `mealoday` → Deployments → déploiement du SHA → **⋯ → Promote to Production** ; **ou** `vercel promote <url-preview>` si le CLI Vercel est authentifié.
+   - L'URL Preview du SHA : `gh api "repos/jordy-manner/mealoday/deployments?sha=$sha&environment=Preview&per_page=1" --jq '.[0].id'` puis `…/statuses` (`environment_url`).
 8. **Vérifier le footer prod (OBLIGATOIRE).** La release n'est **pas** terminée tant que le footer prod ≠ tag :
    ```bash
-   PROD=$(gh repo view jordy-manner/recipe-manager --json homepageUrl -q .homepageUrl)
+   PROD=$(gh repo view jordy-manner/mealoday --json homepageUrl -q .homepageUrl)
    curl -s "$PROD/?cb=$(date +%s)" | grep -o 'v[0-9]\+\.[0-9]\+\.[0-9]\+' | sort -u | tail -1   # doit == vX.Y.Z
    ```
    Si ≠ tag → revenir à l'étape 7 (promotion).
 9. **Revenir sur la branche de version** : `git checkout <branche-version>`. Toujours **finir** sur la branche de version.
 
-> Remote `origin` = repo public `jordy-manner/recipe-manager` en **HTTPS** (jeton `gh`). Merge en **fast-forward** (`--ff-only`) : `main` avance jusqu'au HEAD de la branche de version. Pas de force-push en temps normal. Les commandes `gh api …/deployments` lisent les déploiements Vercel via l'intégration GitHub (aucun token Vercel requis pour la *vérification* ; la *promotion* manuelle se fait au dashboard ou via `vercel` CLI authentifié).
+> Remote `origin` = repo public `jordy-manner/mealoday` en **HTTPS** (jeton `gh`). Merge en **fast-forward** (`--ff-only`) : `main` avance jusqu'au HEAD de la branche de version. Pas de force-push en temps normal. Les commandes `gh api …/deployments` lisent les déploiements Vercel via l'intégration GitHub (aucun token Vercel requis pour la *vérification* ; la *promotion* manuelle se fait au dashboard ou via `vercel` CLI authentifié).
 
 ## Rappel modèle de déploiement
 

@@ -9,7 +9,7 @@ Workflow complet pour démarrer une tâche : collecte de contexte par Q&A → is
 
 ## ⚠️ Règle absolue — rester sur v0.X dans main/
 
-Le répertoire `main/` reste **toujours sur la branche de version** (`v0.X`). Le worktree de la nouvelle tâche est créé en **sibling** de `main/` dans `recipe-manager/`.
+Le répertoire `main/` reste **toujours sur la branche de version** (`v0.X`). Le worktree de la nouvelle tâche est créé en **sibling** de `main/` dans `mealoday/`.
 
 ---
 
@@ -85,7 +85,7 @@ gh issue create \
   --title "{titre en anglais}" \
   --body "{corps validé}" \
   --label "Type:{Feat|Fix|Chore}" \
-  --repo jordy-manner/recipe-manager
+  --repo jordy-manner/mealoday
 ```
 
 Le label correspond au type choisi à l'étape 1 : `feat` → `Type:Feat`, `fix` → `Type:Fix`, `chore` → `Type:Chore`.
@@ -125,7 +125,7 @@ git worktree add ../{slug} {type}/{numéro}-{slug}
 
 Résultat :
 ```
-recipe-manager/
+mealoday/
 ├── main/      ← v0.X (toujours)
 └── {slug}/    ← fix/feat/chore branch
 ```
@@ -155,15 +155,15 @@ echo {port} > ../{slug}/.port
 ```
 ✓ Issue     : #{numéro} — {titre}
 ✓ Branche   : {type}/{numéro}-{slug}
-✓ Worktree  : ../recipe-manager/{slug}/
+✓ Worktree  : ../mealoday/{slug}/
 ✓ Port      : {port} (auto-détecté, enregistré dans .port)
-✓ Dev       : cd ../recipe-manager/{slug} && /run-dev
+✓ Dev       : cd ../mealoday/{slug} && /run-dev
 ```
 
 ---
 
 ## Notes
 
-- Ne jamais créer le worktree avec `../../{slug}` (sortirait de `recipe-manager/`).
+- Ne jamais créer le worktree avec `../../{slug}` (sortirait de `mealoday/`).
 - Si une branche du même nom existe déjà sur le remote : `git checkout --track origin/{branche}`.
 - Migrations Prisma : si un autre worktree a des migrations en cours, **signaler le conflit** avant de créer ce worktree.

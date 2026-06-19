@@ -22,7 +22,7 @@ command -v claude    || echo "MANQUANT: claude CLI"
 
 ```bash
 gh issue list \
-  --repo jordy-manner/recipe-manager \
+  --repo jordy-manner/mealoday \
   --state open \
   --json number,title,body,labels \
   --limit 20
@@ -46,7 +46,7 @@ Pour détecter la PR associée et son label :
 
 ```bash
 # Trouver la PR ouverte liée à l'issue (via "Closes #N" dans le body)
-gh pr list --repo jordy-manner/recipe-manager --state open --json number,labels,body \
+gh pr list --repo jordy-manner/mealoday --state open --json number,labels,body \
   | jq --arg n "{numéro}" '.[] | select(.body | contains("Closes #\($n)") or contains("closes #\($n)"))'
 ```
 
@@ -83,7 +83,7 @@ Si session existe → demander confirmation avant de continuer.
 ### 4. Résoudre la branche de base
 
 ```bash
-BASE_BRANCH=$(git -C /home/jmanner/www/html/__lab/recipe-manager/main branch --show-current)
+BASE_BRANCH=$(git -C /home/jmanner/www/html/__lab/mealoday/main branch --show-current)
 # → ex. "v0.3"
 ```
 
@@ -112,7 +112,7 @@ Un worktree pour cette branche existe peut-être déjà (créé via `task-new`).
 
 ```bash
 BRANCH="{type}/{numéro}-{slug}"
-DEFAULT_WORKTREE="/home/jmanner/www/html/__lab/recipe-manager/{slug}"
+DEFAULT_WORKTREE="/home/jmanner/www/html/__lab/mealoday/{slug}"
 
 # Cherche un worktree existant pour cette branche
 EXISTING=$(git worktree list --porcelain \
@@ -131,7 +131,7 @@ fi
 
 ```bash
 # Ports déjà réservés dans tous les worktrees voisins
-USED_PORTS=$(find /home/jmanner/www/html/__lab/recipe-manager \
+USED_PORTS=$(find /home/jmanner/www/html/__lab/mealoday \
   -maxdepth 2 -name ".port" -exec cat {} \; 2>/dev/null | sort -u)
 
 if [ -f "$WORKTREE/.port" ]; then
@@ -155,7 +155,7 @@ fi
 Générer le token bot **une fois** avant la boucle :
 
 ```bash
-NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/recipe-manager)
+NIGHTSHIFT_TOKEN=$(nightshift-token jordy-manner/mealoday)
 ```
 
 Pour chaque issue sélectionnée :
@@ -163,7 +163,7 @@ Pour chaque issue sélectionnée :
 ```bash
 # mode fix uniquement : PR existe déjà → WIP sur la PR
 if [ "{mode}" = "fix" ]; then
-  GH_TOKEN=$NIGHTSHIFT_TOKEN gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+  GH_TOKEN=$NIGHTSHIFT_TOKEN gh api repos/jordy-manner/mealoday/issues/{pr_number}/labels \
     --method POST \
     --field 'labels[]=Work in Progress'
 fi
@@ -186,7 +186,7 @@ Si `mode == fix` (PR existante avec `Status:Needs Work`) : le prompt inclut en p
 ```
 MODE FIX — Cette issue a une PR existante avec des change requests.
 Lis d'abord tous les comments de la PR #{pr_number} pour comprendre ce qui doit être corrigé :
-  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/recipe-manager --comments
+  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/mealoday --comments
 Applique uniquement les corrections demandées. Retire le label Status:Needs Work et ajoute Status:Reviewed sur la PR une fois corrigé.
 ```
 
@@ -200,7 +200,7 @@ Contexte :
 
 {si mode fix}
 MODE FIX — PR #{pr_number} a des change requests. Lis ses comments avant tout :
-  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/recipe-manager --comments
+  GH_TOKEN={nightshift_token} gh pr view {pr_number} --repo jordy-manner/mealoday --comments
 Applique uniquement les corrections demandées.
 {/si mode fix}
 
@@ -217,15 +217,15 @@ Séquence :
 1. Implémente l'issue (ou applique les corrections si mode fix).
 
 2. Si bloqué :
-   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "🚧 Blocked: {reason}"
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{numéro}/labels --method POST --field 'labels[]=Status:Needs Work'
+   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/mealoday --body "🚧 Blocked: {reason}"
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/{numéro}/labels --method POST --field 'labels[]=Status:Needs Work'
    Arrête-toi et attends.
 
 3. Quand terminé, pousse la branche :
    git push origin {branch}
 
 4. Ouvre la PR via le bot avec corps structuré (issue title + problem summary + changes + acceptance criteria) :
-   PR_URL=$(GH_TOKEN={nightshift_token} gh pr create --repo jordy-manner/recipe-manager \
+   PR_URL=$(GH_TOKEN={nightshift_token} gh pr create --repo jordy-manner/mealoday \
      --head {branch} --base {base_branch} \
      --title "{commit title}" \
      --body "## Issue
@@ -242,34 +242,34 @@ Closes #{numéro} — {issue title}
 🌙 Night shift — man-work-nightshift-bot")
    PR_NUMBER=$(echo $PR_URL | grep -o '[0-9]*$')
    # WIP sur la PR dès sa création (mode normal uniquement — en mode fix il est déjà posé)
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/$PR_NUMBER/labels \
      --method POST --field 'labels[]=Work in Progress'
 
 5. Ajoute les labels et poste le comment de fin :
    {si mode normal}
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/$PR_NUMBER/labels \
      --method DELETE --field 'labels[]=Work in Progress'
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{numéro}/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/{numéro}/labels \
      --method POST --field 'labels[]=hasPR'
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/$PR_NUMBER/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/$PR_NUMBER/labels \
      --method POST --field 'labels[]=Status:Needs Review'
    {/si}
    {si mode fix}
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/{pr_number}/labels \
      --method DELETE --field 'labels[]=Work in Progress'
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/{pr_number}/labels \
      --method DELETE --field 'labels[]=Status:Needs Work'
-   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/recipe-manager/issues/{pr_number}/labels \
+   GH_TOKEN={nightshift_token} gh api repos/jordy-manner/mealoday/issues/{pr_number}/labels \
      --method POST --field 'labels[]=Status:Reviewed'
    {/si}
-   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/recipe-manager --body "✅ Implementation done — branch \`{branch}\` ready for review."
+   GH_TOKEN={nightshift_token} gh issue comment {numéro} --repo jordy-manner/mealoday --body "✅ Implementation done — branch \`{branch}\` ready for review."
 PROMPT
 
 # 2. Wrapper script — isole l'appel Claude, rien ne s'exécute après sa sortie
 # Token bot + branche de base injectés comme valeurs littérales (résolus à la génération)
 cat > /tmp/ns-run-{numéro}.sh << SCRIPT
 #!/bin/bash
-cd /home/jmanner/www/html/__lab/recipe-manager/{slug}
+cd /home/jmanner/www/html/__lab/mealoday/{slug}
 exec claude --dangerously-skip-permissions -p "$(cat /tmp/ns-{numéro}.txt \
   | sed 's|{nightshift_token}|{NIGHTSHIFT_TOKEN_RESOLVED}|g' \
   | sed 's|{base_branch}|{BASE_BRANCH_RESOLVED}|g')"
@@ -291,9 +291,9 @@ tmux send-keys -t "nightshift:#{numéro}" "bash /tmp/ns-run-{numéro}.sh" Enter
 {pour chaque issue}
   [{type}] #{numéro} — {titre}
   Branch   : {type}/{numéro}-{slug}
-  Worktree : recipe-manager/{slug}/
+  Worktree : mealoday/{slug}/
   Port     : {port}
-  GitHub   : https://github.com/jordy-manner/recipe-manager/issues/{numéro}
+  GitHub   : https://github.com/jordy-manner/mealoday/issues/{numéro}
 
 Commandes utiles :
   tmux attach -t nightshift               # voir toutes les fenêtres
