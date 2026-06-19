@@ -26,6 +26,18 @@ npm run dev                 # http://localhost:3000
 - `.env` = template commité (noms de variables, sans secret). Les secrets vont dans `.env.local` (gitignoré).
 - Variables : `DATABASE_URL` (Neon), `APP_RELEASE` (version affichée en footer), `APP_MAINTENANCE` / `APP_MAINTENANCE_BYPASS` (mode maintenance, cf. `proxy.ts`).
 
+## Self-hosting (Docker / VPS)
+
+```bash
+./install.sh   # wizard interactif → génère .env.docker → lance docker compose
+```
+
+- Vérifie les prérequis (`docker` ≥ 20, `docker compose` v2, `openssl`).
+- Génère automatiquement `POSTGRES_PASSWORD` et `CRON_SECRET`.
+- Variables Cloudinary, Pexels et Gemini optionnelles (Enter pour ignorer).
+- Si `.env.docker` existe déjà : valeurs existantes préservées, clés manquantes ajoutées.
+- Compatible Linux, macOS, WSL2.
+
 ## Scripts
 
 | Script | Rôle |

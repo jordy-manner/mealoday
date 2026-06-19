@@ -1,0 +1,199 @@
+#!/usr/bin/env bash
+# Interactive installer for Mealoday Docker self-hosting setup.
+# Compatible: Linux, macOS, WSL2.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENV_FILE="$SCRIPT_DIR/.env.docker"
+COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+
+# ── Colours ───────────────────────────────────────────────────────────────────
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+
+info() { printf "${CYAN}>\033[0m %s\n" "$*"; }
+ok()   { printf "${GREEN}v\033[0m %s\n" "$*"; }
+warn() { printf "${YELLOW}!\033[0m %s\n" "$*"; }
+die()  { printf "${RED}x\033[0m %s\n" "$*" >&2; exit 1; }
+hr()   { printf '%0.s-' {1..60}; printf '\n'; }
+
+# ── 1. Prerequisites ──────────────────────────────────────────────────────────
+hr
+info "Checking prerequisites..."
+
+command -v docker >/dev/null 2>&1 || die "docker not found -- install: https://docs.docker.com/get-docker/"
+DOCKER_MAJOR=$(docker version --format '{{.Server.Version}}' 2>/dev/null | cut -d. -f1 || echo 0)
+[ "${DOCKER_MAJOR:-0}" -ge 20 ] || die "docker >= 20 required (found: $(docker --version 2>/dev/null))"
+ok "docker $(docker version --format '{{.Server.Version}}' 2>/dev/null)"
+
+docker compose version >/dev/null 2>&1 || die "docker compose v2 plugin not found -- see https://docs.docker.com/compose/install/"
+ok "docker compose $(docker compose version --short 2>/dev/null || echo '(v2)')"
+
+command -v openssl >/dev/null 2>&1 || die "openssl not found -- install via your package manager"
+ok "openssl $(openssl version | awk '{print $2}')"
+
+# ── 2. Load existing .env.docker (merge: preserve, add missing) ───────────────
+if [ -f "$ENV_FILE" ]; then
+  warn ".env.docker already exists -- existing values preserved as defaults."
+  # Safe load: pattern-match only, no eval/source
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+      local_key="${BASH_REMATCH[1]}"
+      local_val="${BASH_REMATCH[2]}"
+      # Only export if not already set (preserve shell env overrides)
+      if [ -z "${!local_key+x}" ]; then
+        export "$local_key"="$local_val"
+      fi
+    fi
+  done < "$ENV_FILE"
+fi
+
+gen_secret() { openssl rand -base64 32 | tr -d '\n'; }
+
+# ── 3. Prompt helper ──────────────────────────────────────────────────────────
+# prompt <VAR> <description> <default>
+# Reads from /dev/tty (works even when stdin is a pipe).
+prompt() {
+  local var="$1" desc="$2" default="${3:-}"
+  local current="${!var:-}"
+  local effective="${current:-$default}"
+  local display="$effective"
+
+  # Mask secrets
+  if [[ "$var" == *PASSWORD* || "$var" == *_SECRET || "$var" == *API_SECRET ]]; then
+    [ -n "$effective" ] && display="${effective:0:6}...(hidden)"
+  fi
+
+  if [ -n "$effective" ]; then
+    printf "  ${BOLD}%-28s${RESET} %s\n  [%s]: " "$var" "$desc" "$display"
+  else
+    printf "  ${BOLD}%-28s${RESET} %s\n  [Enter to skip]: " "$var" "$desc"
+  fi
+
+  local input
+  read -r input </dev/tty
+  export "$var"="${input:-$effective}"
+}
+
+# ── 4. Wizard ─────────────────────────────────────────────────────────────────
+echo ""
+hr
+info "Configuration wizard -- press Enter to accept defaults"
+hr
+echo ""
+
+# Required
+info "PostgreSQL"
+prompt POSTGRES_DB       "Database name"       "mealoday"
+prompt POSTGRES_USER     "User"                "mealoday"
+prompt POSTGRES_PASSWORD "Password"            "${POSTGRES_PASSWORD:-$(gen_secret)}"
+
+echo ""
+info "App"
+prompt PORT "Host port" "3000"
+
+# Optional: Cloudinary
+echo ""
+info "Optional -- Cloudinary (recipe photo uploads; leave empty to skip entirely)"
+prompt CLOUDINARY_CLOUD_NAME "Cloud name (Cloudinary dashboard)" "${CLOUDINARY_CLOUD_NAME:-}"
+if [ -n "${CLOUDINARY_CLOUD_NAME:-}" ]; then
+  prompt CLOUDINARY_API_KEY    "API key"      "${CLOUDINARY_API_KEY:-}"
+  prompt CLOUDINARY_API_SECRET "API secret"   "${CLOUDINARY_API_SECRET:-}"
+  prompt CLOUDINARY_FOLDER     "Upload folder" "${CLOUDINARY_FOLDER:-mealoday}"
+else
+  # Keep existing values silently
+  CLOUDINARY_API_KEY="${CLOUDINARY_API_KEY:-}"
+  CLOUDINARY_API_SECRET="${CLOUDINARY_API_SECRET:-}"
+  CLOUDINARY_FOLDER="${CLOUDINARY_FOLDER:-mealoday}"
+fi
+
+# Optional: Pexels
+echo ""
+info "Optional -- Pexels (seasonal thumbnails; leave empty for gradient placeholders)"
+prompt PEXELS_API_KEY "API key" "${PEXELS_API_KEY:-}"
+
+# Optional: Gemini
+echo ""
+info "Optional -- Gemini (recipe photo scan; leave empty to disable)"
+prompt GEMINI_API_KEY "API key"        "${GEMINI_API_KEY:-}"
+prompt GEMINI_MODEL   "Model override" "${GEMINI_MODEL:-}"
+
+# Cron
+echo ""
+info "Cron (bearer token for /api/cron/*; auto-generated)"
+prompt CRON_SECRET "Secret" "${CRON_SECRET:-$(gen_secret)}"
+
+# ── 5. Write .env.docker ──────────────────────────────────────────────────────
+echo ""
+info "Writing ${ENV_FILE}..."
+
+cat > "$ENV_FILE" <<EOF
+# Generated by install.sh on $(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# Re-run ./install.sh to update. Secrets are preserved across runs.
+
+# -- Postgres ------------------------------------------------------------------
+POSTGRES_DB=${POSTGRES_DB:-mealoday}
+POSTGRES_USER=${POSTGRES_USER:-mealoday}
+POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+# -- App -----------------------------------------------------------------------
+APP_RELEASE=${APP_RELEASE:-}
+APP_MAINTENANCE=${APP_MAINTENANCE:-}
+APP_MAINTENANCE_BYPASS=${APP_MAINTENANCE_BYPASS:-}
+PORT=${PORT:-3000}
+
+# -- Cloudinary ----------------------------------------------------------------
+CLOUDINARY_CLOUD_NAME=${CLOUDINARY_CLOUD_NAME:-}
+CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-}
+CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-}
+CLOUDINARY_FOLDER=${CLOUDINARY_FOLDER:-mealoday}
+
+# -- Pexels --------------------------------------------------------------------
+PEXELS_API_KEY=${PEXELS_API_KEY:-}
+
+# -- Gemini --------------------------------------------------------------------
+GEMINI_API_KEY=${GEMINI_API_KEY:-}
+GEMINI_MODEL=${GEMINI_MODEL:-}
+
+# -- Cron ----------------------------------------------------------------------
+CRON_SECRET=${CRON_SECRET}
+EOF
+
+ok ".env.docker written"
+
+# ── 6. Launch ─────────────────────────────────────────────────────────────────
+echo ""
+hr
+info "Starting Mealoday with docker compose..."
+hr
+
+docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" up -d --build
+
+# ── 7. Wait for app container to be running ───────────────────────────────────
+echo ""
+info "Waiting for app to be ready..."
+
+MAX_WAIT=120
+ELAPSED=0
+while true; do
+  if docker compose -f "$COMPOSE_FILE" ps --status running --services 2>/dev/null | grep -q "^app$"; then
+    break
+  fi
+  sleep 3
+  ELAPSED=$((ELAPSED + 3))
+  printf "."
+  if [ "$ELAPSED" -ge "$MAX_WAIT" ]; then
+    echo ""
+    warn "App did not start after ${MAX_WAIT}s."
+    info "Check with: docker compose -f $COMPOSE_FILE logs app"
+    exit 1
+  fi
+done
+
+echo ""
+echo ""
+hr
+ok "Mealoday running at http://localhost:${PORT:-3000}"
+hr
