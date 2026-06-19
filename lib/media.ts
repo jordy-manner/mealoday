@@ -9,6 +9,8 @@
 // Server-only: relies on CLOUDINARY_* secrets, never import from client code.
 
 import crypto from "node:crypto";
+import fs from "node:fs/promises";
+import path from "node:path";
 
 export type UploadedMedia = { url: string; publicId: string };
 
@@ -88,6 +90,32 @@ class CloudinaryStore implements MediaStore {
   }
 }
 
+// ponytail: LocalStore writes to public/uploads/ at build-time root — ephemeral
+// on Vercel serverless (filesystem resets per cold start). Use Cloudinary for
+// production deployments; LocalStore is for local/self-hosted setups only.
+class LocalStore implements MediaStore {
+  readonly configured = true;
+
+  private uploadsDir(): string {
+    return path.join(process.cwd(), "public", "uploads");
+  }
+
+  async upload(file: File): Promise<UploadedMedia> {
+    const ext = file.name.split(".").pop() ?? "bin";
+    const id = `${crypto.randomUUID()}.${ext}`;
+    const dir = this.uploadsDir();
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, id), Buffer.from(await file.arrayBuffer()));
+    return { url: `/uploads/${id}`, publicId: id };
+  }
+
+  async remove(publicId: string): Promise<void> {
+    await fs
+      .unlink(path.join(this.uploadsDir(), publicId))
+      .catch(() => undefined);
+  }
+}
+
 /** Fallback when no provider is configured: uploads throw, deletions no-op. */
 class NullStore implements MediaStore {
   readonly configured = false;
@@ -101,13 +129,13 @@ class NullStore implements MediaStore {
 
 let store: MediaStore | null = null;
 
-/** Returns the active media store (singleton), Cloudinary if configured. */
+/** Returns the active media store (singleton): Cloudinary → LocalStore → NullStore. */
 export function getMediaStore(): MediaStore {
   if (!store) {
     store =
       CLOUD && KEY && SECRET
         ? new CloudinaryStore(CLOUD, KEY, SECRET)
-        : new NullStore();
+        : new LocalStore();
   }
   return store;
 }
