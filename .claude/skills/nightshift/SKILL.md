@@ -115,8 +115,8 @@ BRANCH="{type}/{numéro}-{slug}"
 DEFAULT_WORKTREE="/home/jmanner/www/html/__lab/mealoday/{slug}"
 
 # Cherche un worktree existant pour cette branche
-EXISTING=$(git worktree list --porcelain \
-  | awk '/^worktree /{wt=$2} /^branch refs\/heads\/'$BRANCH'$/{print wt}')
+# Note: awk regex fails on branch names with '/' — use grep instead
+EXISTING=$(git worktree list | grep " \[$BRANCH\]" | awk '{print $1}')
 
 if [ -n "$EXISTING" ]; then
   WORKTREE="$EXISTING"

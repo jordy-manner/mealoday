@@ -7,6 +7,10 @@ description: Crée une nouvelle issue GitHub + branche + worktree pour une tâch
 
 Workflow complet pour démarrer une tâche : collecte de contexte par Q&A → issue GitHub → branche conventionnelle → worktree isolé.
 
+## ⚠️ Règle absolue — NE JAMAIS fixer directement
+
+Quand l'utilisateur signale un bug ou une amélioration à apporter, **ne jamais corriger le code directement**. Toujours suivre ce workflow : créer l'issue → branche → worktree. Même si le fix est trivial et identifié, l'implémenter directement contourne le workflow et sera rejeté.
+
 ## ⚠️ Règle absolue — rester sur v0.X dans main/
 
 Le répertoire `main/` reste **toujours sur la branche de version** (`v0.X`). Le worktree de la nouvelle tâche est créé en **sibling** de `main/` dans `mealoday/`.
