@@ -239,6 +239,9 @@ Closes #{numéro} — {issue title}
 ## Acceptance criteria
 {copy acceptance criteria checkboxes from issue}
 
+## Preview
+Vercel auto-deploy is disabled on PR branches. Comment \`/deploy\` to trigger a preview deployment.
+
 🌙 Night shift — man-work-nightshift-bot")
    PR_NUMBER=$(echo $PR_URL | grep -o '[0-9]*$')
    # WIP sur la PR dès sa création (mode normal uniquement — en mode fix il est déjà posé)
