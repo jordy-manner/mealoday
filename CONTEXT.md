@@ -1,4 +1,4 @@
-# CONTEXT — Recipe Manager (“Marmite.”)
+# CONTEXT — Mealoday
 
 > Onboarding doc for humans **and** AI assistants. Kept up to date **before every
 > commit** (enforced by the `preview-release` skill). If you change the data

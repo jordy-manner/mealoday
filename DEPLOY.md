@@ -30,7 +30,7 @@ In **Project → Settings → Environment Variables**, define `DATABASE_URL` **p
 ## Connecting the repo (one-time manual step)
 
 1. [vercel.com](https://vercel.com) → **Add New… → Project → Import Git Repository**.
-2. Select **`jordy-manner/recipe-manager`** (grant GitHub access if prompted).
+2. Select **`jordy-manner/mealoday`** (grant GitHub access if prompted).
 3. Framework detected: **Next.js** (leave defaults — `vercel-build` is picked up automatically).
 4. Add the environment variables above (at minimum `DATABASE_URL` for Production and Preview).
 5. **Deploy**.

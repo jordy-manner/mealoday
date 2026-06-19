@@ -50,7 +50,7 @@ Cette règle prime sur tout réglage de permissions.
 8. **Push branche de version + tag → Preview.** L'identité ayant été posée à l'étape 2 : `git push origin <branche-version>` puis `git push origin vX.Y.Z`. Ce push déclenche un **Preview** Vercel. (Pas de force-push : c'est un fast-forward sur la branche de version.)
 9. **Rester sur la branche de version.** Ne jamais merger `main` ici.
 
-> Note push : remote `origin` = repo public `jordy-manner/recipe-manager` en **HTTPS** (jeton `gh` ; la clé SSH de la machine appartient à un autre compte). Le push de la branche de version est non destructif (fast-forward) ; on peut le faire dans la foulée du commit validé. La prod (`main`) reste hors de cette skill.
+> Note push : remote `origin` = repo public `jordy-manner/mealoday` en **HTTPS** (jeton `gh` ; la clé SSH de la machine appartient à un autre compte). Le push de la branche de version est non destructif (fast-forward) ; on peut le faire dans la foulée du commit validé. La prod (`main`) reste hors de cette skill.
 
 ## Pied de message — consommation de tokens
 
@@ -63,7 +63,7 @@ Générer la ligne avec :
 ```bash
 node -e '
 const fs=require("fs");
-const dir="/home/jmanner/.claude/projects/-home-jmanner-www-html---lab-recipe-manager";
+const dir="/home/jmanner/.claude/projects/-home-jmanner-www-html---lab-mealoday-main";
 let i=0,cw=0,cr=0,o=0;
 for(const f of fs.readdirSync(dir).filter(f=>f.endsWith(".jsonl")))
   for(const l of fs.readFileSync(dir+"/"+f,"utf8").split("\n")){
