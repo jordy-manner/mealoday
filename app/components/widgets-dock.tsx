@@ -60,7 +60,8 @@ type RunningTimer = {
   label: string;
   kind: TimerKind;
   total: number;
-  remaining: number;
+  remaining: number; // authoritative when paused; derived from endsAt when running
+  endsAt: number | null; // wall-clock deadline (ms) when running, null when paused/stopped
   running: boolean;
   ringing: boolean;
 };
@@ -160,17 +161,18 @@ export function WidgetsDock() {
   const menuId = useId();
   const titleId = useId();
 
-  // Tick every 250 ms; a timer that reaches 0 starts ringing.
+  // Tick every 250 ms; derive remaining from wall-clock deadline so background
+  // throttling (locked screen, backgrounded tab) doesn't cause drift.
   useEffect(() => {
     const iv = setInterval(
       () =>
         setTimers((ts) =>
           ts.map((t) => {
-            if (!t.running || t.ringing) return t;
-            const remaining = t.remaining - 0.25;
+            if (!t.running || t.ringing || t.endsAt === null) return t;
+            const remaining = (t.endsAt - Date.now()) / 1000;
             if (remaining <= 0) {
               fireAlert();
-              return { ...t, remaining: 0, running: false, ringing: true };
+              return { ...t, remaining: 0, endsAt: null, running: false, ringing: true };
             }
             return { ...t, remaining };
           }),
@@ -233,19 +235,25 @@ export function WidgetsDock() {
 
   const addTimer = (label: string, kind: TimerKind, total: number) => {
     if (total <= 0) return;
-    setTimers((ts) => [...ts, { id: ++seq.current, label, kind, total, remaining: total, running: true, ringing: false }]);
+    setTimers((ts) => [...ts, { id: ++seq.current, label, kind, total, remaining: total, endsAt: Date.now() + total * 1000, running: true, ringing: false }]);
     setPopin(null);
   };
   const toggle = (id: number) =>
     setTimers((ts) =>
-      ts.map((t) =>
-        t.id === id
-          ? { ...t, running: !t.running, ringing: false, remaining: t.ringing ? t.total : t.remaining }
-          : t,
-      ),
+      ts.map((t) => {
+        if (t.id !== id) return t;
+        if (t.ringing) return { ...t, running: false, ringing: false, remaining: t.total, endsAt: null };
+        if (t.running) {
+          // Pause: snapshot remaining from wall clock so resume is accurate
+          const remaining = t.endsAt !== null ? Math.max(0, (t.endsAt - Date.now()) / 1000) : t.remaining;
+          return { ...t, running: false, remaining, endsAt: null };
+        }
+        // Resume: recompute deadline from stored remaining
+        return { ...t, running: true, endsAt: Date.now() + t.remaining * 1000 };
+      }),
     );
   const resetTimer = (id: number) =>
-    setTimers((ts) => ts.map((t) => (t.id === id ? { ...t, remaining: t.total, running: false, ringing: false } : t)));
+    setTimers((ts) => ts.map((t) => (t.id === id ? { ...t, remaining: t.total, endsAt: null, running: false, ringing: false } : t)));
   const remove = (id: number) => setTimers((ts) => ts.filter((t) => t.id !== id));
 
   const running = timers.filter((t) => t.running || t.ringing);
