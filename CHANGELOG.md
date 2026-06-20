@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.4.9] — 2026-06-20
+
+- **Timer wall-clock fix** (#63, refs #62): timer remaining now derived from wall-clock delta instead of interval ticks — stays accurate when tab is backgrounded or screen locks.
+
 ## [v0.4.8] — 2026-06-20
 
 - **Footer mega menu** (#64, closes #57): full sitemap panel in the site footer (all sections, links, brand block).
