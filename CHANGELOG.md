@@ -2,6 +2,10 @@
 
 All notable changes to the project, by release. Versions follow the `vMAJOR.MINOR.PATCH` format; each release maps to a git tag and a Vercel Preview/Production deployment.
 
+## [v0.4.7] — 2026-06-20
+
+- **Home view switcher** (#65, closes #58): grid / list / magazine view toggle on the home page; preference persisted in localStorage.
+
 ## [v0.4.6] — 2026-06-20
 
 - **Ingredient prep step** (#66, closes #61): `ingredientStep` boolean on `Recipe`; when enabled, shows a pre-step card listing all ingredients as checkable items before step 1.
