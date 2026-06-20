@@ -19,12 +19,22 @@ enum SeasonMode {
   ALWAYS // available all year round
 }
 
+// Serving unit for a recipe (e.g. "personnes", "verrines", "crêpes").
+// Managed from /parametres/unites-portions; created on-the-fly via connectOrCreate.
+model ServingUnit {
+  id      String   @id @default(cuid())
+  name    String   @unique
+  recipes Recipe[]
+}
+
 model Recipe {
   id          String   @id @default(cuid())
   slug        String   @unique // URL-friendly identifier derived from the title
   title       String
   description String?
   servings    Int?
+  servingUnitId String?
+  servingUnit   ServingUnit? @relation(fields: [servingUnitId], references: [id], onDelete: SetNull)
   prepTime    Int? // minutes
   cookTime    Int? // minutes
   restTime    Int? // minutes (resting/proofing time)
@@ -32,6 +42,8 @@ model Recipe {
   rating      Float? // average rating out of 5
   author      String?
   popular     Boolean  @default(false) // featured in the "popular" section
+  // Added by feat/ingredient-prep-step — kept here to avoid cross-branch migration conflicts.
+  ingredientStep Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
