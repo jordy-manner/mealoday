@@ -144,6 +144,7 @@ export const recipeInputSchema = z.object({
     (v) => v === true || v === "true" || v === "on",
     z.boolean(),
   ),
+  ingredientStep: boolField,
   kcal: intField("Les calories"),
   protein: intField("Les protéines"),
   carbs: intField("Les glucides"),
