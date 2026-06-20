@@ -14,6 +14,7 @@ export const ACCENT_STORAGE = "mealoday-accent";
 export type ThemeMode = "light" | "dark";
 
 export const ACCENTS = [
+  { id: "Jaune", value: "#f5c700", deep: "#d9af00", soft: "#fdf2c0", ink: "#8a6a00" },
   { id: "Terracotta", value: "#d8582e", deep: "#a73a1b", soft: "#ffdfcb", ink: "#852b09" },
   { id: "Paprika", value: "#c0392b", deep: "#992c20", soft: "#ffd9d2", ink: "#7e241a" },
   { id: "Ambre", value: "#cc8d2e", deep: "#a06f1f", soft: "#fdecc8", ink: "#7a541a" },
@@ -24,29 +25,29 @@ export type AccentId = (typeof ACCENTS)[number]["id"];
 
 // Token values per theme. Keys map to --color-<key>. Light mirrors globals.css.
 export const LIGHT_TOKENS: Record<string, string> = {
-  bg: "#fff3e9",
-  surface: "#fffdf8",
-  "surface-muted": "#faebe0",
-  ink: "#271d18",
-  "ink-soft": "#665751",
-  "ink-faint": "#91837c",
-  line: "#e4ddd5",
-  "line-soft": "#ece7e1",
+  bg: "#f3ecd8",
+  surface: "#fffdf3",
+  "surface-muted": "#efe7d2",
+  ink: "#1a1a1a",
+  "ink-soft": "#6b6456",
+  "ink-faint": "#9b9484",
+  line: "#e4dabf",
+  "line-soft": "#ede4cf",
   veg: "#4b8b5a",
-  "veg-soft": "#d6f0da",
+  "veg-soft": "#dcefdf",
 };
 
 export const DARK_TOKENS: Record<string, string> = {
-  bg: "#1f1a17",
-  surface: "#2a2421",
-  "surface-muted": "#332c28",
-  ink: "#f6efe8",
-  "ink-soft": "#c4b8ae",
-  "ink-faint": "#968a80",
-  line: "#3d352f",
-  "line-soft": "#352e29",
-  veg: "#6fb07e",
-  "veg-soft": "#2c3b30",
+  bg: "#151517",
+  surface: "#232327",
+  "surface-muted": "#2d2d33",
+  ink: "#f4eedd",
+  "ink-soft": "#9a958c",
+  "ink-faint": "#6f6a62",
+  line: "#34343b",
+  "line-soft": "#2a2a30",
+  veg: "#74b487",
+  "veg-soft": "#1f2c23",
 };
 
 /** Applies theme + accent to <html> (client-only — touches the DOM). */

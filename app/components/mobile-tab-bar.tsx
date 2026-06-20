@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "./icons";
 import { SHEET_GROUPS, SHEET_ROUTES } from "./nav-data";
+import { ThemeToggle } from "./theme-toggle";
 
 // Mobile-only navigation (hidden ≥ sm): a fixed bottom tab bar with a raised
 // center "Créer" action, plus a "Plus" tab opening a bottom sheet for the
@@ -53,7 +54,7 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
     <>
       <nav
         aria-label="Navigation principale"
-        className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-bg/90 pb-[env(safe-area-inset-bottom)] backdrop-blur-[12px] sm:hidden"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-line-soft bg-bg/90 pb-[env(safe-area-inset-bottom)] shadow-[0_-2px_6px_rgb(0_0_0/0.07)] backdrop-blur-[12px] sm:hidden"
       >
         <ul className="mx-auto flex max-w-content items-stretch px-1">
           {TABS.slice(0, 2).map((tab) => (
@@ -68,7 +69,7 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
               aria-current={createActive ? "page" : undefined}
               className="-mt-5 flex min-h-[44px] flex-col items-center gap-1"
             >
-              <span className="grid h-[52px] w-[52px] place-items-center rounded-full bg-accent text-white shadow-card-lg ring-4 ring-bg transition active:translate-y-px">
+              <span className="grid h-[52px] w-[52px] place-items-center rounded-full bg-accent text-[#151517] shadow-card-lg ring-4 ring-bg transition active:translate-y-px">
                 <Icon name="plus" size={24} />
               </span>
               <span
@@ -98,7 +99,7 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
                 {notifCount > 0 && (
                   <span
                     aria-hidden="true"
-                    className="absolute -right-1.5 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-white ring-2 ring-bg"
+                    className="absolute -right-1.5 -top-1 grid h-[15px] min-w-[15px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-[#151517] ring-2 ring-bg"
                   >
                     {notifCount > 9 ? "9+" : notifCount}
                   </span>
@@ -106,6 +107,11 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
               </span>
               <span className="text-[11px] font-semibold">Plus</span>
             </button>
+          </li>
+
+          {/* Theme toggle */}
+          <li className="flex flex-1 items-center justify-center">
+            <ThemeToggle className="text-ink-faint" />
           </li>
         </ul>
       </nav>
@@ -163,7 +169,7 @@ export function MobileTabBar({ notifCount = 0 }: { notifCount?: number }) {
                           {showBadge && (
                             <span
                               aria-hidden="true"
-                              className="absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-white ring-2 ring-bg"
+                              className="absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[9px] font-bold text-[#151517] ring-2 ring-bg"
                             >
                               {notifCount > 9 ? "9+" : notifCount}
                             </span>

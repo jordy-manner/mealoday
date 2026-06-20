@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Design system — frozen variant "Gourmand Arrondi · Terracotta · Magazine".
+ * Design system — frozen variant "Gourmand Arrondi · Jaune Vintage · Sur le Plat".
  * These tokens are the running source of truth; DESIGN.md (repo root) mirrors
  * them and `npm run check:design` fails the build if a value here diverges from
  * it. They generate the documented utilities (bg-surface-muted, text-veg,
@@ -10,24 +10,24 @@
  */
 @theme {
   /* Colors */
-  --color-bg: #fff3e9;
-  --color-surface: #fffdf8;
-  --color-surface-muted: #faebe0;
+  --color-bg: #f3ecd8;
+  --color-surface: #fffdf3;
+  --color-surface-muted: #efe7d2;
 
-  --color-ink: #271d18;
-  --color-ink-soft: #665751;
-  --color-ink-faint: #91837c;
+  --color-ink: #1a1a1a;
+  --color-ink-soft: #6b6456;
+  --color-ink-faint: #9b9484;
 
-  --color-line: #e4ddd5;
-  --color-line-soft: #ece7e1;
+  --color-line: #e4dabf;
+  --color-line-soft: #ede4cf;
 
-  --color-accent: #d8582e;
-  --color-accent-deep: #a73a1b;
-  --color-accent-soft: #ffdfcb;
-  --color-accent-ink: #852b09;
+  --color-accent: #f5c700;
+  --color-accent-deep: #d9af00;
+  --color-accent-soft: #fdf2c0;
+  --color-accent-ink: #8a6a00;
 
   --color-veg: #4b8b5a;
-  --color-veg-soft: #d6f0da;
+  --color-veg-soft: #dcefdf;
 
   /* Amber — warning / "À compléter" / end-of-season state */
   --color-amber: oklch(0.7 0.13 70);
@@ -37,12 +37,14 @@
   /* Carbon footprint tiers (ADEME) — seasonal views */
   --color-carbon-low: #4b8b5a;
   --color-carbon-med: #cc8d2e;
-  --color-carbon-high: #d8582e;
+  --color-carbon-high: #f5c700;
 
   /* Typography (next/font variables, with literal fallbacks) */
-  --font-display: var(--font-newsreader), "Newsreader", Georgia, serif;
-  --font-sans: var(--font-hanken), "Hanken Grotesk", system-ui, sans-serif;
+  --font-display: var(--font-outfit), "Outfit", system-ui, sans-serif;
+  --font-sans: var(--font-outfit), "Outfit", system-ui, sans-serif;
   --font-mono: var(--font-spline-mono), "Spline Sans Mono", ui-monospace, monospace;
+  --font-logo: var(--font-bangers), "Bangers", cursive;
+  --font-script: var(--font-architects), "Architects Daughter", cursive;
 
   /* Radii (Gourmand Arrondi) */
   --radius-input: 14px;
@@ -164,11 +166,23 @@
   }
 }
 
+html,
+body {
+  overflow-x: clip;
+}
+
 body {
   background: var(--color-bg);
+  background-image: radial-gradient(rgb(0 0 0 / 0.04) 1px, transparent 1.4px);
+  background-size: 11px 11px;
+  background-attachment: fixed;
   color: var(--color-ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+[data-theme="dark"] body {
+  background-image: radial-gradient(rgb(255 255 255 / 0.03) 1px, transparent 1.4px);
 }
 
 /*
@@ -195,22 +209,29 @@ body {
   color: var(--color-accent-ink);
 }
 
+/* Hero title: Outfit bold with the keyword in <em> rendered in Architects Daughter. */
+.hero-title em {
+  font-family: var(--font-script);
+  font-style: normal;
+  color: var(--color-accent-ink);
+}
+
+[data-theme="dark"] .hero-title em {
+  color: var(--color-accent);
+}
+
 /*
- * Photo placeholder: warm gradient (driven by --ph-bg) with a faint diagonal
- * weave on top. Used wherever a recipe has no real image yet.
+ * Photo placeholder: surface-muted fill + BD halftone dot pattern on top.
  */
 .photo-ph {
-  background: var(--ph-bg, var(--color-surface-muted));
+  background: var(--color-surface-muted);
 }
 .photo-ph::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(
-    135deg,
-    transparent 0 13px,
-    oklch(1 0 0 / 0.05) 13px 14px
-  );
+  background-image: radial-gradient(rgb(0 0 0 / 0.07) 1px, transparent 1.4px);
+  background-size: 11px 11px;
   pointer-events: none;
 }
 

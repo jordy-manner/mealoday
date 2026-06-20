@@ -6,6 +6,7 @@ import { Icon, type IconName } from "./icons";
 import { DesktopMoreMenu } from "./nav-more-menu";
 import { NotifBell } from "./notif-bell";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./theme-toggle";
 import type { Notifications } from "@/lib/notifications";
 
 const NAV: { label: string; href: string; icon: IconName }[] = [
@@ -36,7 +37,7 @@ export function TopBar({ notif }: { notif: Notifications }) {
                 aria-current={active ? "page" : undefined}
                 className={`inline-flex items-center gap-2 rounded-full px-3.5 py-2 text-[14.5px] font-semibold transition ${
                   active
-                    ? "bg-accent text-white"
+                    ? "bg-accent text-[#151517]"
                     : "text-white/75 hover:bg-white/[0.12] hover:text-white"
                 }`}
               >
@@ -53,7 +54,7 @@ export function TopBar({ notif }: { notif: Notifications }) {
         {/* Desktop CTA. */}
         <Link
           href="/recettes/nouvelle"
-          className="hidden items-center gap-2 rounded-full bg-accent px-4 py-2.5 text-[14px] font-semibold text-white shadow-card transition hover:bg-accent-deep active:translate-y-px sm:inline-flex"
+          className="hidden items-center gap-2 rounded-full bg-accent px-4 py-2.5 text-[14px] font-semibold text-[#151517] shadow-card transition hover:bg-accent-deep active:translate-y-px sm:inline-flex"
         >
           <Icon name="plus" size={17} /> Créer une recette
         </Link>
@@ -62,6 +63,9 @@ export function TopBar({ notif }: { notif: Notifications }) {
         <div className="hidden shrink-0 sm:block">
           <NotifBell items={notif.items} todoCount={notif.todoCount} placement="desktop" dark />
         </div>
+
+        {/* Theme toggle — far right. */}
+        <ThemeToggle className="hidden text-white/70 sm:grid" />
       </div>
     </header>
   );

@@ -20,7 +20,7 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
   });
 
   return (
-    <footer className="mt-14 border-t border-white/[0.08] bg-ink">
+    <footer className="mt-14 border-t border-white/[0.08]" style={{ background: "#101012" }}>
       {/* Mega sitemap */}
       <div className="mx-auto grid w-full max-w-content grid-cols-1 gap-10 px-[18px] pt-[60px] pb-10 sm:grid-cols-3 sm:px-8">
         {/* Recettes */}
@@ -105,8 +105,8 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
 
       {/* Logo + copyright strip */}
       <div className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-6 border-t border-white/[0.08] px-[18px] pb-12 pt-8 sm:px-8">
-        <div className="flex flex-col items-center gap-2">
-          <Logo size={42} color="white" />
+        <div className="flex flex-col items-start gap-2">
+          <Logo size={46} />
           <p
             style={{
               fontFamily: "var(--font-outfit, Outfit, system-ui, sans-serif)",
@@ -115,16 +115,15 @@ export async function SiteFooter({ recipeCount }: { recipeCount?: number }) {
               letterSpacing: "0.05em",
               color: "rgba(255,255,255,0.6)",
               lineHeight: 1,
-              textAlign: "center",
             }}
           >
-            Orchestrer vos menus
+            L&apos;app des œufs frais
             {recipeCount != null && ` · ${recipeCount} recette${recipeCount > 1 ? "s" : ""}`}
           </p>
         </div>
         <div className="flex flex-col items-end gap-1.5 text-right">
           <p className="text-[13.5px] text-white/50">
-            © {new Date().getFullYear()} Mealoday. Tous droits réservés.
+            © {new Date().getFullYear()} Sur le Plat. Tous droits réservés.
           </p>
           <span className="rounded-md bg-white/[0.08] px-2.5 py-1 font-mono text-[12px] text-white/[0.62]">
             Release {release}
