@@ -248,6 +248,7 @@ body {
 .hero-title em {
   font-family: var(--font-script);
   font-style: normal;
+  font-weight: 400;
   color: var(--color-accent-ink);
 }
 
