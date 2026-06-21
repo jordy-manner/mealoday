@@ -132,7 +132,7 @@ export function SectionHead({
 }) {
   return (
     <div className="mb-[22px] flex items-end justify-between gap-5">
-      <h2 className="inline-flex items-center gap-2.5 font-display text-[28px] font-medium tracking-[-0.015em]">
+      <h2 className="inline-flex items-center gap-2.5 font-display text-[28px] font-bold tracking-[-0.015em]">
         {icon}
         {title}
       </h2>

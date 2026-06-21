@@ -24,7 +24,7 @@ export interface MediaStore {
 const CLOUD = process.env.CLOUDINARY_CLOUD_NAME;
 const KEY = process.env.CLOUDINARY_API_KEY;
 const SECRET = process.env.CLOUDINARY_API_SECRET;
-const FOLDER = process.env.CLOUDINARY_FOLDER ?? "mealoday";
+const FOLDER = process.env.CLOUDINARY_FOLDER ?? "sur-le-plat";
 
 /**
  * Cloudinary signature: the params (minus file/api_key/resource_type) sorted

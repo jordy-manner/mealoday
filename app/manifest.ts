@@ -4,14 +4,14 @@ import type { MetadataRoute } from "next";
 // theme colors. Next serves this at /manifest.webmanifest and links it.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Mealoday — Recettes maison",
-    short_name: "Mealoday",
+    name: "Sur le Plat — Recettes maison",
+    short_name: "Sur le Plat",
     description:
-      "Orchestrez vos menus : recherchez, consultez et créez vos recettes.",
+      "Vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
     start_url: "/recettes",
     display: "standalone",
-    background_color: "#fff3e9",
-    theme_color: "#d8582e",
+    background_color: "#f3ecd8",
+    theme_color: "#151517",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

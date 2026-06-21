@@ -1425,7 +1425,7 @@ export function RecipeForm({
                 ))}
               </div>
             )}
-            <h3 className="font-display text-[22px] font-semibold leading-tight">
+            <h3 className="font-display text-[22px] font-bold leading-tight">
               {f.title || "Titre de la recette"}
             </h3>
             <p className="line-clamp-2 text-sm leading-relaxed text-ink-soft">

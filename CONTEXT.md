@@ -1,4 +1,4 @@
-# CONTEXT — Mealoday
+# CONTEXT — Sur le Plat
 
 > Onboarding doc for humans **and** AI assistants. Kept up to date **before every
 > commit** (enforced by the `preview-release` skill). If you change the data
@@ -16,8 +16,8 @@ recipes. UI is in **French**; code is in **English**.
   Generated client lives in `app/generated/prisma` (not the default location).
 - **Cloudinary** for recipe photos, behind a swappable abstraction (`lib/media.ts`).
 - **Zod** for input validation.
-- Fonts via `next/font/google`: Newsreader (display/serif), Hanken Grotesk (UI),
-  Spline Sans Mono (mono).
+- Fonts via `next/font/google`: Outfit (UI/display), Bangers (wordmark/logo),
+  Architects Daughter (hero accent), Spline Sans Mono (mono).
 
 > ⚠️ This is a modified Next.js — read `node_modules/next/dist/docs/` before using
 > unfamiliar Next APIs (see `AGENTS.md`).
@@ -134,8 +134,8 @@ User-facing routes are **in French**; the REST API stays `/api/recipes`.
   - `/parametres/general` — Pexels + **Gemini** + **ScraperAPI** keys (server
     secrets, `lib/settings`, generic `ApiKeyForm`). Gemini enables the photo-scan
     method; ScraperAPI is the web-import 403 bypass (fallback only).
-  - `/parametres/apparence` — theme (clair/sombre) + accent (Terracotta/Paprika/
-    Ambre/Olive), a **client preference** (localStorage), applied app-wide by
+  - `/parametres/apparence` — theme (clair/sombre) + accent (Jaune/Terracotta/
+    Paprika/Ambre/Olive), a **client preference** (localStorage), applied app-wide by
     overriding `--color-*` on `<html>` (see Design system / dark mode).
   - `/parametres/{ingredients,ustensiles,unites}` — editable **catalog tables**
     (`_catalog-table.tsx`, client): accent-insensitive search, "Toutes/À
@@ -323,7 +323,7 @@ rendering, which these pages already are).
 - `app/manifest.ts`, `app/icon.svg`, `app/apple-icon.png` — favicon / PWA icons.
 
 ## Design system
-Frozen variant **“Gourmand Arrondi · Terracotta · Magazine”**. **`DESIGN.md` (repo
+Frozen variant **”Gourmand Arrondi · Jaune Vintage”**. **`DESIGN.md` (repo
 root) is the single source of truth** (identity, colours, typography, spacing,
 components, tone) — read it before any UI work. The Tailwind v4 `@theme` in
 `app/globals.css` is the running implementation that `DESIGN.md` mirrors; tokens:

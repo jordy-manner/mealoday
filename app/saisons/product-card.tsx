@@ -32,7 +32,7 @@ export function ProductCard({
         <CategoryBadge category={product.category} className="absolute left-2.5 top-2.5 z-[2]" />
       </div>
       <div className="flex flex-col gap-2.5 px-3.5 pb-4 pt-3.5">
-        <h3 className="font-display text-[17px] font-semibold leading-tight">{product.name}</h3>
+        <h3 className="font-display text-[17px] font-bold leading-tight">{product.name}</h3>
         <div className="flex items-center justify-between gap-2">
           <SeasonStatePill status={status} />
           <CarbonBadge ecv={product.ecv} />

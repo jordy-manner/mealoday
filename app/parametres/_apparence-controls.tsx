@@ -17,15 +17,15 @@ const THEMES: { id: ThemeMode; label: string }[] = [
 ];
 
 export function ApparenceControls() {
-  const [theme, setTheme] = useState<ThemeMode>("light");
-  const [accent, setAccent] = useState<AccentId>("Terracotta");
+  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [accent, setAccent] = useState<AccentId>("Jaune");
 
   // Sync the controls with the preference the bootstrap script already applied.
   // localStorage is client-only (absent during SSR), so this must run after
-  // mount — the initial light/Terracotta render matches the server markup.
+  // mount — the initial light/Jaune render matches the server markup.
   useEffect(() => {
-    const t = (localStorage.getItem(THEME_STORAGE) as ThemeMode) || "light";
-    const a = (localStorage.getItem(ACCENT_STORAGE) as AccentId) || "Terracotta";
+    const t = (localStorage.getItem(THEME_STORAGE) as ThemeMode) || "dark";
+    const a = (localStorage.getItem(ACCENT_STORAGE) as AccentId) || "Jaune";
     // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing from a client-only store on mount
     setTheme(t);
     setAccent(a);
@@ -63,11 +63,11 @@ export function ApparenceControls() {
                   className="mb-2 flex h-16 flex-col gap-1.5 rounded-input p-2.5"
                   style={
                     t.id === "dark"
-                      ? { background: "#1f1a17", border: "1px solid #3d352f" }
-                      : { background: "#fff3e9", border: "1px solid #e4ddd5" }
+                      ? { background: "#151517", border: "1px solid #34343b" }
+                      : { background: "#f3ecd8", border: "1px solid #e4dabf" }
                   }
                 >
-                  <span className="h-2 w-10 rounded-full" style={{ background: "#d8582e" }} />
+                  <span className="h-2 w-10 rounded-full" style={{ background: "#f5c700" }} />
                   <span
                     className="h-1.5 w-full rounded-full"
                     style={{ background: t.id === "dark" ? "#3d352f" : "#e4ddd5" }}

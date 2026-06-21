@@ -156,7 +156,7 @@ function ScanStep({
   return (
     <div className="max-w-2xl animate-fade-up">
       <BackToChoices onClick={onBack} />
-      <h1 className="mb-2 font-display text-[clamp(24px,3vw,32px)] font-medium tracking-[-0.02em]">
+      <h1 className="mb-2 font-display text-[clamp(24px,3vw,32px)] font-extrabold tracking-[-0.02em]">
         Scanner une recette
       </h1>
       <p className="mb-5 text-[15px] text-ink-soft">
@@ -277,7 +277,7 @@ function CrawlStep({
   return (
     <div className="max-w-2xl animate-fade-up">
       <BackToChoices onClick={onBack} />
-      <h1 className="mb-2 font-display text-[clamp(24px,3vw,32px)] font-medium tracking-[-0.02em]">
+      <h1 className="mb-2 font-display text-[clamp(24px,3vw,32px)] font-extrabold tracking-[-0.02em]">
         Importer depuis le web
       </h1>
       <p className="mb-5 text-[15px] text-ink-soft">
@@ -440,7 +440,7 @@ export function CreateFlow({
         <Icon name="back" size={18} /> Retour
       </Link>
       <p className="eyebrow">Nouvelle recette</p>
-      <h1 className="mb-2 mt-1 font-display text-[clamp(26px,3.4vw,38px)] font-medium tracking-[-0.02em]">
+      <h1 className="mb-2 mt-1 font-display text-[clamp(26px,3.4vw,38px)] font-extrabold tracking-[-0.02em]">
         Comment ajouter votre recette ?
       </h1>
       <p className="mb-7 text-[15px] text-ink-soft">

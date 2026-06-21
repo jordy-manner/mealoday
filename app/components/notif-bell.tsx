@@ -57,13 +57,13 @@ export function NotifBell({
         aria-expanded={open}
         className={`relative grid h-[42px] w-[42px] place-items-center rounded-full border transition ${
           dark
-            ? "border-white/[0.16] bg-white/[0.08] text-white/85 hover:border-white/40 hover:text-white"
+            ? "border-white/[0.14] bg-white/[0.06] text-ink/85 hover:border-white/40 hover:text-white"
             : "border-line bg-surface text-ink-soft hover:border-ink-faint hover:text-ink"
         }`}
       >
         <Icon name="bell" size={19} />
         {todoCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white ring-2 ${dark ? "ring-ink" : "ring-bg"}`}>
+          <span className={`absolute -right-0.5 -top-0.5 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-[#151517] ring-2 ${dark ? "ring-ink" : "ring-bg"}`}>
             {badge}
           </span>
         )}

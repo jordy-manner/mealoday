@@ -142,7 +142,7 @@ export function RecipeDetail({
               ))}
             </div>
           )}
-          <h1 className="mb-4 font-display text-[clamp(36px,4.5vw,56px)] font-medium leading-[1.02] tracking-[-0.025em]">
+          <h1 className="mb-4 font-display text-[clamp(36px,4.5vw,56px)] font-extrabold leading-[1.02] tracking-[-0.025em]">
             {recipe.title}
           </h1>
           {recipe.description && (
@@ -199,7 +199,7 @@ export function RecipeDetail({
         {/* Ingredients aside */}
         <aside className="rounded-card border border-line-soft bg-surface p-6 shadow-card md:sticky md:top-[92px]">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <h2 className="font-display text-[24px] font-medium">Ingrédients</h2>
+            <h2 className="font-display text-[24px] font-bold">Ingrédients</h2>
             <div className="flex items-center overflow-hidden rounded-full border border-line">
               <button
                 type="button"
@@ -296,7 +296,7 @@ export function RecipeDetail({
 
         {/* Steps */}
         <section className="min-w-0">
-          <h2 className="mb-4 font-display text-[24px] font-medium">Préparation</h2>
+          <h2 className="mb-4 font-display text-[24px] font-bold">Préparation</h2>
 
           {recipe.ingredientStep && recipe.ingredients.length > 0 && (
             <div className="mb-3.5">
@@ -380,7 +380,7 @@ export function RecipeDetail({
       {/* Related */}
       {related.length > 0 && (
         <div className="pb-20">
-          <h2 className="mb-[22px] font-display text-[28px] font-medium tracking-[-0.015em]">
+          <h2 className="mb-[22px] font-display text-[28px] font-bold tracking-[-0.015em]">
             Dans la même catégorie
           </h2>
           <div className="grid grid-cols-1 gap-[26px] sm:grid-cols-2 lg:grid-cols-3">

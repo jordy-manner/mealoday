@@ -104,7 +104,7 @@ export function RecipeCard({
           </div>
         )}
         <h3
-          className={`font-display font-semibold leading-tight text-ink ${big ? "text-[30px] sm:text-[38px]" : "text-[22px]"}`}
+          className={`font-display font-bold leading-tight text-ink ${big ? "text-[30px] sm:text-[38px]" : "text-[22px]"}`}
         >
           {r.title}
         </h3>
@@ -167,7 +167,7 @@ export function RecipeCardRow({
             </span>
           )}
         </div>
-        <h3 className="font-display text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink">
+        <h3 className="font-display text-[22px] font-bold leading-tight tracking-[-0.01em] text-ink">
           {r.title}
         </h3>
         {r.description && (
@@ -184,7 +184,7 @@ export function RecipeCardRow({
             {r.rating.toFixed(1)}
           </span>
         )}
-        <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition group-hover:bg-accent group-hover:text-white">
+        <span className="grid h-10 w-10 place-items-center rounded-full bg-surface-muted text-ink-soft transition group-hover:bg-accent group-hover:text-[#151517]">
           <Icon name="arrow" size={18} />
         </span>
       </div>

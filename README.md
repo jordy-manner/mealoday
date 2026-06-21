@@ -1,6 +1,6 @@
-# Mealoday
+# Sur le Plat
 
-Application de gestion de recettes de cuisine.
+Vos recettes dans une même coquille.
 
 ## Stack
 

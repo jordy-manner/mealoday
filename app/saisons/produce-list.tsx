@@ -53,7 +53,7 @@ function ProduceRow({
           <CategoryBadge category={p.category} className="border border-line-soft" />
           <SeasonStatePill status={status} />
         </div>
-        <h3 className="truncate font-display text-[17px] font-semibold leading-tight">
+        <h3 className="truncate font-display text-[17px] font-bold leading-tight">
           {p.name}
         </h3>
       </div>

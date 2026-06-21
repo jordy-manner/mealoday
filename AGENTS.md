@@ -7,7 +7,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Design system
 
 `DESIGN.md` (repo root) is the **single source of truth** for the visual system
-("Gourmand Arrondi · Terracotta"): colours, typography, spacing/radii/shadows,
+("Gourmand Arrondi · Jaune Vintage"): colours, typography, spacing/radii/shadows,
 themes, accents, components, tone. Read it before any UI work. **Never hardcode
 colours/typography** — always use the theme tokens (`bg-surface`, `text-ink-soft`,
 `rounded-card`, `shadow-card`, `text-carbon-*`…) generated from the `@theme` in

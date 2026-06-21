@@ -74,7 +74,7 @@ export function Breadcrumb() {
               {last || !c.href ? (
                 <span
                   aria-current={last ? 'page' : undefined}
-                  className="flex min-w-0 max-w-[360px] items-center gap-1.5 font-semibold text-accent-ink"
+                  className="flex min-w-0 max-w-[360px] items-center gap-1.5 crumb-active"
                 >
                   {c.icon && <Icon name={c.icon} size={14} className="shrink-0" />}
                   <span className="truncate">{c.label}</span>

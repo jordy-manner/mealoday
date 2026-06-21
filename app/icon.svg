@@ -1,16 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <defs>
-    <radialGradient id="egg" cx="50%" cy="50%" r="50%">
-      <stop offset="80%" stop-color="#fff" />
-      <stop offset="100%" stop-color="#d8582e" />
-    </radialGradient>
-  </defs>
-  <!-- dark tile -->
-  <rect width="32" height="32" rx="8.96" fill="#271d18" />
-  <!-- egg: white disc with terracotta rim -->
-  <circle cx="16" cy="16" r="9.6" fill="url(#egg)" />
-  <!-- terracotta yolk offset top-left -->
-  <circle cx="14.5" cy="14.5" r="2.4" fill="#d8582e" />
-  <!-- white glint -->
-  <circle cx="13.5" cy="13.5" r="0.65" fill="#fff" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <rect width="100" height="100" rx="28" fill="#151517"></rect>
+  <g transform="translate(50 50) scale(0.74) translate(-50 -44)">
+    <path d="M50 6c20 0 30 14 34 30 4 17-3 32-18 38-4 1.6-9 3-16 3s-14-1.2-19-4C18 67 12 53 16 36 20 19 30 6 50 6Z" fill="#fff"></path>
+    <circle cx="52" cy="50" r="21" fill="#f5c700"></circle>
+    <circle cx="52" cy="50" r="21" fill="none" stroke="#e0a800" stroke-width="2"></circle>
+    <ellipse cx="44" cy="42" rx="6" ry="8" fill="#fff" opacity="0.85"></ellipse>
+  </g>
 </svg>

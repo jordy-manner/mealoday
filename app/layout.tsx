@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Newsreader, Hanken_Grotesk, Spline_Sans_Mono, Outfit } from "next/font/google";
+import { Outfit, Bangers, Architects_Daughter, Spline_Sans_Mono } from "next/font/google";
 import "./globals.css";
 import { TopBar } from "./components/top-bar";
 import { Breadcrumb } from "./components/breadcrumb";
@@ -9,20 +9,27 @@ import { SiteFooter } from "./components/site-footer";
 import { ThemeScript } from "./components/theme-script";
 import { getNotifications } from "@/lib/notifications";
 
-// Display serif (titles/hero), with italic for accents like the hero word.
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+// UI + display sans (body, buttons, labels, titles).
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  style: ["normal", "italic"],
+  weight: ["400", "500", "600", "700", "800", "900"],
   display: "swap",
 });
 
-// UI sans-serif (body, buttons, labels).
-const hanken = Hanken_Grotesk({
-  variable: "--font-hanken",
+// Logo wordmark + gros titres BD.
+const bangers = Bangers({
+  variable: "--font-bangers",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400"],
+  display: "swap",
+});
+
+// Mot-accent manuscrit dans les titres héros.
+const architects = Architects_Daughter({
+  variable: "--font-architects",
+  subsets: ["latin"],
+  weight: ["400"],
   display: "swap",
 });
 
@@ -34,21 +41,13 @@ const splineMono = Spline_Sans_Mono({
   display: "swap",
 });
 
-// Brand wordmark only — Meal(o)day logotype.
-const outfit = Outfit({
-  variable: "--font-outfit",
-  subsets: ["latin"],
-  weight: ["600"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
-  title: { default: "Mealoday — Recettes maison", template: "%s · Mealoday" },
-  description: "Orchestrez vos menus : recherchez, consultez et créez vos recettes.",
+  title: { default: "Sur le Plat — Recettes maison", template: "%s · Sur le Plat" },
+  description: "Vos recettes dans une même coquille : recherchez, consultez et créez vos recettes maison.",
 };
 
 // Dark top bar is what mobile browser chrome "sees".
-export const viewport: Viewport = { themeColor: "#271d18" };
+export const viewport: Viewport = { themeColor: "#151517" };
 
 export default async function RootLayout({
   children,
@@ -66,7 +65,7 @@ export default async function RootLayout({
     <html
       lang="fr"
       suppressHydrationWarning
-      className={`${newsreader.variable} ${hanken.variable} ${splineMono.variable} ${outfit.variable} h-full`}
+      className={`${outfit.variable} ${bangers.variable} ${architects.variable} ${splineMono.variable} h-full`}
     >
       {/* pt clears the fixed chrome: TopBar (64px) everywhere, + the breadcrumb
           row (40px) on ≥ sm. pb on mobile clears the fixed bottom tab bar. */}
