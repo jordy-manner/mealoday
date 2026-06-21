@@ -18,11 +18,11 @@ export const LEGACY_ACCENT_STORAGE = "mealoday-accent";
 export type ThemeMode = "light" | "dark";
 
 export const ACCENTS = [
-  { id: "Jaune", value: "#f5c700", deep: "#d9af00", soft: "#fdf2c0", ink: "#8a6a00" },
-  { id: "Terracotta", value: "#d8582e", deep: "#a73a1b", soft: "#ffdfcb", ink: "#852b09" },
-  { id: "Paprika", value: "#c0392b", deep: "#992c20", soft: "#ffd9d2", ink: "#7e241a" },
-  { id: "Ambre", value: "#cc8d2e", deep: "#a06f1f", soft: "#fdecc8", ink: "#7a541a" },
-  { id: "Olive", value: "#6f8f3f", deep: "#566f30", soft: "#e6efcf", ink: "#42531f" },
+  { id: "Jaune",      value: "#f5c700", deep: "#d9af00", soft: "#fdf2c0", ink: "#8a6a00", darkSoft: "#2c2613", darkInk: "#f5c700" },
+  { id: "Terracotta", value: "#d8582e", deep: "#a73a1b", soft: "#ffdfcb", ink: "#852b09", darkSoft: "#3a1f15", darkInk: "#e8794f" },
+  { id: "Paprika",    value: "#c0392b", deep: "#992c20", soft: "#ffd9d2", ink: "#7e241a", darkSoft: "#3a1a16", darkInk: "#e06a5b" },
+  { id: "Ambre",      value: "#cc8d2e", deep: "#a06f1f", soft: "#fdecc8", ink: "#7a541a", darkSoft: "#332512", darkInk: "#e0aa55" },
+  { id: "Olive",      value: "#6f8f3f", deep: "#566f30", soft: "#e6efcf", ink: "#42531f", darkSoft: "#232a16", darkInk: "#9fbf63" },
 ] as const;
 
 export type AccentId = (typeof ACCENTS)[number]["id"];
@@ -63,9 +63,10 @@ export function applyTheme(theme: ThemeMode, accentId: string) {
   const tokens = theme === "dark" ? DARK_TOKENS : LIGHT_TOKENS;
   for (const [k, v] of Object.entries(tokens)) root.style.setProperty(`--color-${k}`, v);
   const a = ACCENTS.find((x) => x.id === accentId) ?? ACCENTS[0];
+  const isDark = theme === "dark";
   root.style.setProperty("--color-accent", a.value);
   root.style.setProperty("--color-accent-deep", a.deep);
-  root.style.setProperty("--color-accent-soft", a.soft);
-  root.style.setProperty("--color-accent-ink", a.ink);
+  root.style.setProperty("--color-accent-soft", isDark ? a.darkSoft : a.soft);
+  root.style.setProperty("--color-accent-ink",  isDark ? a.darkInk  : a.ink);
   requestAnimationFrame(() => root.classList.remove("no-transition"));
 }

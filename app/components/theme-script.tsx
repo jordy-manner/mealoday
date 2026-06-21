@@ -25,10 +25,11 @@ var L=${JSON.stringify(LIGHT_TOKENS)},D=${JSON.stringify(DARK_TOKENS)},A=${JSON.
 var r=document.documentElement;r.setAttribute('data-theme',t);
 var tk=t==='dark'?D:L;for(var k in tk){r.style.setProperty('--color-'+k,tk[k]);}
 var ac=A.filter(function(x){return x.id===a;})[0]||A[0];
+var dk=t==='dark';
 r.style.setProperty('--color-accent',ac.value);
 r.style.setProperty('--color-accent-deep',ac.deep);
-r.style.setProperty('--color-accent-soft',ac.soft);
-r.style.setProperty('--color-accent-ink',ac.ink);
+r.style.setProperty('--color-accent-soft',dk?ac.darkSoft:ac.soft);
+r.style.setProperty('--color-accent-ink',dk?ac.darkInk:ac.ink);
 }catch(e){}})();`;
   return <script dangerouslySetInnerHTML={{ __html: js }} />;
 }
